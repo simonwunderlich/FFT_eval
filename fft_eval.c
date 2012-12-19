@@ -22,10 +22,6 @@
  * This program has been created to aid open source spectrum
  * analyzer development for Qualcomm/Atheros AR92xx and AR93xx
  * based chipsets.
- *
- * TODO: The interpreted data format is unknown! Please help
- * investigating the data, or help acquiring information about the
- * data format from Qualcomm Atheros!
  */
 
 #include <errno.h>
@@ -34,23 +30,50 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
 
+typedef int8_t s8;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint64_t u64;
+
+/* taken from ath9k.h */
+#define SPECTRAL_HT20_NUM_BINS          56
+
+enum ath_fft_sample_type {
+        ATH_FFT_SAMPLE_HT20 = 0
+};
+
+struct fft_sample_tlv {
+        u8 type;        /* see ath_fft_sample */
+        u16 length;
+        /* type dependent data follows */
+} __attribute__((packed));
+
+struct fft_sample_ht20 {
+        struct fft_sample_tlv tlv;
+
+        u8 __alignment;
+
+        u16 freq;
+        s8 rssi;
+        s8 noise;
+
+        u16 max_magnitude;
+        u8 max_index;
+        u8 bitmap_weight;
+
+        u64 tsf;
+
+        u16 data[SPECTRAL_HT20_NUM_BINS];
+} __attribute__((packed));
+
+
 struct scanresult {
-	/* additional data from the driver which are not
-	 * part of the RX buffer */
-	int freq, rssi, rssi_ext, noise;
-
-	/* the last 7 bytes of the RX buffer */
-	int special_1, special_2, special_3;
-	int special_4, special_5, special_6, special_7;
-
-	/* the rest of the RX buffer */
-	uint8_t data[2048];
-	int data_n;
+	struct fft_sample_ht20 sample;
 	struct scanresult *next;
 };
 
 #define WIDTH	1600
-#define HEIGHT	450
+#define HEIGHT	650
 #define BPP	32
 
 #define X_SCALE	10
@@ -215,71 +238,59 @@ int draw_picture(int highlight, int startfreq)
 	}
 
 	/* horizontal lines (dBm) */
-	for (i = 0; i < 100; i += 10) {
-		y = 400 - Y_SCALE * i;
+	for (i = 0; i < 150; i += 10) {
+		y = 600 - Y_SCALE * i;
 		
 		for (x = 0; x < WIDTH; x++)
 			pixels[x + y * WIDTH] = 0x40404040 | AMASK;
 
-		snprintf(text, sizeof(text), "-%d dBm", (100 - i));
+		snprintf(text, sizeof(text), "-%d dBm", (150 - i));
 		render_text(surface, text, 5, y - 15);
 	}
 
 
 	rnum = 0;
 	for (result = result_list; result ; result = result->next) {
-		int datasum = 0, datamax = 0, datamin = 255, datamed = 0;
+		int datamax = 0, datamin = 65536;
 		int datasquaresum = 0;
 
-		/* TODO: only datasquaresum is used here, but feel free to play
-		 * with the other values as well if they appear to be more useful.
-		 */
-		for (i = 0; i < result->data_n; i++) {
+		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
 			int data;
 
-			/* TODO: is this offset really raised to the power of two? */
-			data = ((int) result->data[i]) * pow(2, result->special_4);
-			datasum += data;
-			datasquaresum += data * data;
+			data = result->sample.data[i] * result->sample.data[i];
+			datasquaresum += data;
 			if (data > datamax) datamax = data;
 			if (data < datamin) datamin = data;
 		}
 
-		datamed = datasum / result->data_n;
 		if (rnum == highlight) {
-			/* TODO: prints some statistical data about the currently selected 
-			 * data sample and the special fields. We need some more interpretation
-			 * for the special fields. */
-			printf("result[%03d]: freq %04d rssi %03d, rssi_ext %03d, noise %03d, %03d %03d %03d | %02x %02x %02x %02x (%02x %02x)| data_n = %d | ", 
-				rnum, result->freq, result->rssi, result->rssi_ext, result->noise,
-				result->special_1, result->special_2, result->special_3,
-				result->special_4, result->special_5, result->special_6, 
-				result->special_7, (result->special_7 & 0xc0) >> 6, result->special_7 & 0x3f,
-				result->data_n);
-				/* it appears that special 7 is split? */
-			printf("datasum = %d, median = %d, datamax = %d, datamin = %d, datasquaresum = %d\n", datasum, datamed, datamax, datamin, datasquaresum);
+			/* prints some statistical data about the currently selected 
+			 * data sample and auxiliary data. */
+			printf("result[%03d]: freq %04d rssi %03d, noise %03d, max_magnitude %04d max_index %03d bitmap_weight %03d tsf %llu | ", 
+				rnum, result->sample.freq, result->sample.rssi, result->sample.noise,
+				result->sample.max_magnitude, result->sample.max_index, result->sample.bitmap_weight,
+				result->sample.tsf);
+			printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
 
-			highlight_freq = result->freq;
+			highlight_freq = result->sample.freq;
 		}
 
 
-		for (i = 0; i < result->data_n; i++) {
+		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
 			float freq;
 			float signal;
 			int data;
-			freq = result->freq - 10.0 + ((20.0 * i) / result->data_n);
+			freq = result->sample.freq - 10.0 + ((20.0 * i) / SPECTRAL_HT20_NUM_BINS);
 			
 			x = (X_SCALE * (freq - startfreq));
-			signal = result->noise + (1.0 * result->rssi * result->data[i]) / (datamax);
 
-			/* TODO: is this offset really raised to the power of two? */
-			data = result->data[i] * powf(2, result->special_4);
+			/* This is where the "magic" happens: interpret the signal
+			 * to output some kind of data which looks useful.  */
 
-			/* TODO: this is where the "magic" happens: interpret the signal
-			 * to output some kind of data which looks useful. 
-			 *
-			 * Note that this might be completely wrong and needs confirmation */
-			signal = result->noise + result->rssi + logf((float) data * data / datasquaresum) * 3;
+			data = result->sample.data[i];
+			if (data == 0)
+				data = 1;
+			signal = result->sample.noise + result->sample.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 			y = 400 - (400.0 + Y_SCALE * signal);
 
@@ -311,93 +322,32 @@ int draw_picture(int highlight, int startfreq)
  *
  * returns the buffer with the files content
  */
-char *read_file(char *fname)
+char *read_file(char *fname, size_t *size)
 {
 	FILE *fp;
 	char *buf = NULL;
-	size_t size, ret;
+	size_t ret;
 
 	fp = fopen(fname, "r");
 
 	if (!fp)
 		return NULL;
 
-	size = 0;
+	*size = 0;
 	while (!feof(fp)) {
 
-		buf = realloc(buf, size + 4097);
+		buf = realloc(buf, *size + 4097);
 		if (!buf)
 			return NULL;
 
-		ret = fread(buf + size, 1, 4096, fp);
-		size += ret;
+		ret = fread(buf + *size, 1, 4096, fp);
+		*size += ret;
 	}
 	fclose(fp);
 
-	buf[size] = 0;
+	buf[*size] = 0;
 
 	return buf;
-}
-
-/*
- * finalize_result - after reading one line, see if the data
- * is useful and add it to the list
- *
- * @result: temporary result buffer
- *
- * returns 0 on success, -1 if something is off.
- * In the error case, result is free()'d
- */
-
-int finalize_result(struct scanresult *result)
-{
-	struct scanresult *tail;
-
-	/* last 7 bytes have special meaning */
-	result->special_1 =  result->data[result->data_n - 1];
-	result->special_2 =  result->data[result->data_n - 2];
-	result->special_3 =  result->data[result->data_n - 3];
-	result->special_4 =  result->data[result->data_n - 4];
-	result->special_5 =  result->data[result->data_n - 5];
-	result->special_6 =  result->data[result->data_n - 6];
-	result->special_7 =  result->data[result->data_n - 7];
-	result->data_n -= 7;
-
-	/* TODO: data in the middle usually looks too "high" to be true,
-	 * set it to zero. 
-	 *
-	 * Maybe this comes from some interfering HF component?*/
-	result->data[result->data_n / 2 - 1] = 0;
-	result->data[result->data_n / 2 - 0] = 0;
-
-	if (result->rssi > 128)
-		result->rssi = 255 - result->rssi;
-	if (result->noise > 128)
-		result->noise = result->noise - 255;
-
-
-	/* this is usually 0x11, if it is not the data looks "weird". 
-	 * TODO: confirm, and keep it */
-	if (!(result->special_1 & 0x11))
-		goto err;
-
-	/* there are some very long values (~1500 bytes), which look very different - probably
-	 * something else */
-	if (result->data_n > 60)
-		goto err;
-
-	if (!result_list) {
-		result_list = result;
-	} else {
-		for (tail = result_list; tail->next ; tail = tail->next);
-		tail->next = result;
-	}
-
-	scanresults_n++;
-	return 0;
-err:
-	free(result);
-	return -1;
 }
 
 /*
@@ -409,62 +359,51 @@ err:
  */
 int read_scandata(char *fname)
 {
-	char *pos, *end;
-	char *scandata;
-	int num, done;
+	char *pos, *scandata;
+	size_t len, sample_len;
 	struct scanresult *result;
+	struct fft_sample_tlv *tlv;
+	struct scanresult *tail = result_list;
 
-	scandata = read_file(fname);
+	scandata = read_file(fname, &len);
 	if (!scandata)
 		return -1;
 
 	pos = scandata;
 
-	result = malloc(sizeof(*result));
-	memset(result, 0, sizeof(*result));
-
-	num = 0; done = 0;
-
-	/* Wow, beautiful string parsing! :( */
-	while (!done) {
-		switch (*pos) {
-		case '\t':
-		case ' ':
-			pos++;
-			break;
-		case '\n':
-			finalize_result(result);
-			result = malloc(sizeof(*result));
-			memset(result, 0, sizeof(*result));
-
-			num = 0;
-			pos++;
-			break;
-		case 0:
-			done = 1;
-			break;
-		default:
-			switch (num) {
-			case 0:	result->freq = strtoul(pos, &end, 10);	break;
-			case 1: result->rssi = strtoul(pos, &end, 10);	break;
-			case 2: result->rssi_ext = strtoul(pos, &end, 10);  break;
-			case 3: result->noise = strtoul(pos, &end, 10);  break;
-			default:
-				/* should not happen when data from driver is valid ... */
-				if (num < 4 && (num - 4) >= sizeof(result->data))
-					return -1;
-
-				result->data[num - 4] = strtoul(pos, &end, 16);
-				result->data_n = num - 3;
-				break;
-			}
-			num++;
-			if (pos == end)
-				done = 1;
-			pos = end;
-			break;
+	while (pos - scandata < len) {
+		tlv = (struct fft_sample_tlv *) pos;
+		sample_len = sizeof(*tlv) + tlv->length;
+		pos += sample_len;
+		if (tlv->type != ATH_FFT_SAMPLE_HT20) {
+			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
+			continue;
 		}
+
+		if (sample_len != sizeof(result->sample)) {
+			fprintf(stderr, "wrong sample length (have %d, expected %d)\n", sample_len, sizeof(result->sample));
+			continue;
+		}
+
+		result = malloc(sizeof(*result));
+		if (!result)
+			continue;
+
+		memset(result, 0, sizeof(*result));
+		memcpy(&result->sample, tlv, sizeof(result->sample));
+		fprintf(stderr, "copy %d bytes\n", sizeof(result->sample));
+		
+		if (tail)
+			tail->next = result;
+		else
+			result_list = result;
+
+		tail = result;
+
+		scanresults_n++;
 	}
+
+	fprintf(stderr, "read %d scan results\n", scanresults_n);
 	return 0;
 }
 
