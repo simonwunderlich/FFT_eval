@@ -515,8 +515,10 @@ void usage(int argc, char *argv[])
 	fprintf(stderr, "card, try:\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "ifconfig wlan0 up\n");
-	fprintf(stderr, "iw dev wlan0 scan spec-scan\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan > /tmp/fft_results\n");
+	fprintf(stderr, "echo chanscan > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
+	fprintf(stderr, "iw dev wlan0 scan\n");
+	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan0 > /tmp/fft_results\n");
+	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
 	fprintf(stderr, "%s /tmp/fft_results\n", argv[0]);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
