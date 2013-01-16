@@ -31,6 +31,7 @@
 #include <math.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
+#include <inttypes.h>
 
 typedef int8_t s8;
 typedef uint8_t u8;
@@ -41,7 +42,7 @@ typedef uint64_t u64;
 #define SPECTRAL_HT20_NUM_BINS          56
 
 enum ath_fft_sample_type {
-        ATH_FFT_SAMPLE_HT20 = 0
+        ATH_FFT_SAMPLE_HT20 = 1
 };
 
 struct fft_sample_tlv {
@@ -53,7 +54,7 @@ struct fft_sample_tlv {
 struct fft_sample_ht20 {
         struct fft_sample_tlv tlv;
 
-        u8 __alignment;
+        u8 max_exp;
 
         u16 freq;
         s8 rssi;
@@ -65,7 +66,7 @@ struct fft_sample_ht20 {
 
         u64 tsf;
 
-        u16 data[SPECTRAL_HT20_NUM_BINS];
+        u8 data[SPECTRAL_HT20_NUM_BINS];
 } __attribute__((packed));
 
 
@@ -259,7 +260,8 @@ int draw_picture(int highlight, int startfreq)
 		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
 			int data;
 
-			data = result->sample.data[i] * result->sample.data[i];
+			data = (result->sample.data[i] << result->sample.max_exp);
+			data *= data;
 			datasquaresum += data;
 			if (data > datamax) datamax = data;
 			if (data < datamin) datamin = data;
@@ -268,7 +270,7 @@ int draw_picture(int highlight, int startfreq)
 		if (rnum == highlight) {
 			/* prints some statistical data about the currently selected 
 			 * data sample and auxiliary data. */
-			printf("result[%03d]: freq %04d rssi %03d, noise %03d, max_magnitude %04d max_index %03d bitmap_weight %03d tsf %llu | ", 
+			printf("result[%03d]: freq %04d rssi %03d, noise %03d, max_magnitude %04d max_index %03d bitmap_weight %03d tsf %"PRIu64" | ", 
 				rnum, result->sample.freq, result->sample.rssi, result->sample.noise,
 				result->sample.max_magnitude, result->sample.max_index, result->sample.bitmap_weight,
 				result->sample.tsf);
@@ -289,7 +291,7 @@ int draw_picture(int highlight, int startfreq)
 			/* This is where the "magic" happens: interpret the signal
 			 * to output some kind of data which looks useful.  */
 
-			data = result->sample.data[i];
+			data = result->sample.data[i] << result->sample.max_exp;
 			if (data == 0)
 				data = 1;
 			signal = result->sample.noise + result->sample.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
@@ -362,7 +364,7 @@ char *read_file(char *fname, size_t *size)
 int read_scandata(char *fname)
 {
 	char *pos, *scandata;
-	size_t len, sample_len, i;
+	size_t len, sample_len;
 	struct scanresult *result;
 	struct fft_sample_tlv *tlv;
 	struct scanresult *tail = result_list;
@@ -383,7 +385,7 @@ int read_scandata(char *fname)
 		}
 
 		if (sample_len != sizeof(result->sample)) {
-			fprintf(stderr, "wrong sample length (have %d, expected %d)\n", sample_len, sizeof(result->sample));
+			fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
 			continue;
 		}
 
@@ -393,13 +395,11 @@ int read_scandata(char *fname)
 
 		memset(result, 0, sizeof(*result));
 		memcpy(&result->sample, tlv, sizeof(result->sample));
-		fprintf(stderr, "copy %d bytes\n", sizeof(result->sample));
+		fprintf(stderr, "copy %zd bytes\n", sizeof(result->sample));
 
 		result->sample.freq = be16toh(result->sample.freq);
 		result->sample.max_magnitude = be16toh(result->sample.max_magnitude);
 		result->sample.tsf = be64toh(result->sample.tsf);
-		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++)
-			result->sample.data[i] = be16toh(result->sample.data[i]);
 		
 		if (tail)
 			tail->next = result;
