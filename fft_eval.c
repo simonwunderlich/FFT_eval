@@ -24,6 +24,8 @@
  * based chipsets.
  */
 
+#define _BSD_SOURCE
+#include <endian.h>
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
@@ -360,7 +362,7 @@ char *read_file(char *fname, size_t *size)
 int read_scandata(char *fname)
 {
 	char *pos, *scandata;
-	size_t len, sample_len;
+	size_t len, sample_len, i;
 	struct scanresult *result;
 	struct fft_sample_tlv *tlv;
 	struct scanresult *tail = result_list;
@@ -373,7 +375,7 @@ int read_scandata(char *fname)
 
 	while (pos - scandata < len) {
 		tlv = (struct fft_sample_tlv *) pos;
-		sample_len = sizeof(*tlv) + tlv->length;
+		sample_len = sizeof(*tlv) + be16toh(tlv->length);
 		pos += sample_len;
 		if (tlv->type != ATH_FFT_SAMPLE_HT20) {
 			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
@@ -392,6 +394,12 @@ int read_scandata(char *fname)
 		memset(result, 0, sizeof(*result));
 		memcpy(&result->sample, tlv, sizeof(result->sample));
 		fprintf(stderr, "copy %d bytes\n", sizeof(result->sample));
+
+		result->sample.freq = be16toh(result->sample.freq);
+		result->sample.max_magnitude = be16toh(result->sample.max_magnitude);
+		result->sample.tsf = be64toh(result->sample.tsf);
+		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++)
+			result->sample.data[i] = be16toh(result->sample.data[i]);
 		
 		if (tail)
 			tail->next = result;
