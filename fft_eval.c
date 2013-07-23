@@ -486,6 +486,17 @@ void graphics_main(void)
 			case SDLK_PAGEDOWN:
 				accel+= 2;
 				scroll = 1;
+				break;
+			case SDLK_2:
+				startfreq = 2370;
+				accel +=1;
+				scroll = 1;
+				break;
+			case SDLK_5:
+				startfreq = 5150;
+				accel +=1;
+				scroll = 1;
+				break;
 			default:
 				break;
 			}
