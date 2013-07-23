@@ -96,7 +96,7 @@ TTF_Font *font = NULL;
 struct scanresult *result_list;
 int scanresults_n = 0;
 
-int graphics_init_sdl(void)
+int graphics_init_sdl(char *name)
 {
 	SDL_VideoInfo *VideoInfo;
 	int SDLFlags;
@@ -123,7 +123,7 @@ int graphics_init_sdl(void)
 			SDLFlags |= SDL_HWACCEL;
 	}
 
-	SDL_WM_SetCaption("FFT eval", "FFT eval");
+	SDL_WM_SetCaption(name, name);
 	screen = SDL_SetVideoMode(WIDTH, HEIGHT, BPP, SDLFlags);
 
 	if (TTF_Init() < 0) {
@@ -419,7 +419,7 @@ int read_scandata(char *fname)
  * graphics_main - sets up the data and holds the mainloop.
  *
  */
-void graphics_main(void)
+void graphics_main(char *name)
 {
 	SDL_Event event;
 	int quit = 0;
@@ -428,7 +428,7 @@ void graphics_main(void)
 	int startfreq = 2350, accel = 0;
 	int highlight_freq = startfreq;
 
-	if (graphics_init_sdl() < 0) {
+	if (graphics_init_sdl(name) < 0) {
 		fprintf(stderr, "Failed to initialize graphics.\n");
 		return;
 	}
@@ -486,6 +486,17 @@ void graphics_main(void)
 			case SDLK_PAGEDOWN:
 				accel+= 2;
 				scroll = 1;
+				break;
+			case SDLK_2:
+				startfreq = 2370;
+				accel +=1;
+				scroll = 1;
+				break;
+			case SDLK_5:
+				startfreq = 5150;
+				accel +=1;
+				scroll = 1;
+				break;
 			default:
 				break;
 			}
@@ -540,7 +551,7 @@ int main(int argc, char *argv[])
 		usage(argc, argv);
 		return -1;
 	}
-	graphics_main();
+	graphics_main(argv[1]);
 
 	return 0;
 }
