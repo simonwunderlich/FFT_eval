@@ -1,6 +1,6 @@
 BIN=fft_eval
 OBJ=fft_eval.o
-LIBS=-lSDL -lSDL_ttf
+LIBS=-lSDL -lSDL_ttf -lm
 CC=gcc -std=c99 -O2 -Wall -pedantic
 LD=gcc
 .SUFFIXES: .o .c
