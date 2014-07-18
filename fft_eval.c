@@ -38,12 +38,16 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint64_t u64;
 
-/* taken from ath9k.h */
-#define SPECTRAL_HT20_NUM_BINS          56
-
 enum ath_fft_sample_type {
-        ATH_FFT_SAMPLE_HT20 = 1
+        ATH_FFT_SAMPLE_HT20 = 1,
+	ATH_FFT_SAMPLE_ATH10K = 3,
 };
+
+/*
+ * ath9k spectral definition
+ * TODO: HT40 still missing, any volunteers?
+ */
+#define SPECTRAL_HT20_NUM_BINS          56
 
 struct fft_sample_tlv {
         u8 type;        /* see ath_fft_sample */
@@ -69,9 +73,41 @@ struct fft_sample_ht20 {
         u8 data[SPECTRAL_HT20_NUM_BINS];
 } __attribute__((packed));
 
+/*
+ * ath10k spectral sample definition
+ */
+
+#define SPECTRAL_ATH10K_MAX_NUM_BINS            256
+
+struct fft_sample_ath10k {
+	struct fft_sample_tlv tlv;
+	u8 chan_width_mhz;
+	uint16_t freq1;
+	uint16_t freq2;
+	int16_t noise;
+	uint16_t max_magnitude;
+	uint16_t total_gain_db;
+	uint16_t base_pwr_db;
+	uint64_t tsf;
+	s8 max_index;
+	u8 rssi;
+	u8 relpwr_db;
+	u8 avgpwr_db;
+	u8 max_exp;
+
+	u8 data[0];
+} __attribute__((packed));
+
 
 struct scanresult {
-	struct fft_sample_ht20 sample;
+	union {
+		struct fft_sample_tlv tlv;
+		struct fft_sample_ht20 ht20;
+		struct {
+			struct fft_sample_ath10k header;
+			u8 data[SPECTRAL_ATH10K_MAX_NUM_BINS];
+		} ath10k;
+	} sample;
 	struct scanresult *next;
 };
 
@@ -204,6 +240,163 @@ int render_text(SDL_Surface *surface, char *text, int x, int y)
 	return 0;
 }
 
+
+int plot_datapoint(Uint32 *pixels, float freq, float startfreq, int noise, int rssi, int data, int datasquaresum, int highlight)
+{
+	Uint32 color, opacity;
+	int x, y;
+	float signal;
+
+	/* This is where the "magic" happens: interpret the signal
+	 * to output some kind of data which looks useful.  */
+
+	x = (X_SCALE * (freq - startfreq));
+	if (data == 0)
+		data = 1;
+	signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+	y = 400 - (400.0 + Y_SCALE * signal);
+
+	if (highlight) {
+		color = RMASK | AMASK;
+		opacity = 255;
+	} else {
+		color = BMASK | AMASK;
+		opacity = 30;
+	}
+
+	if (bigpixel(pixels, x, y, color, opacity) < 0)
+		return -1;
+	return 0;
+}
+
+
+int draw_sample_ht20(Uint32 *pixels, struct scanresult *result, float startfreq, int highlight)
+{
+	int datamax = 0, datamin = 65536;
+	int datasquaresum = 0;
+	int i;
+
+	for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
+		int data;
+
+		data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
+		data *= data;
+		datasquaresum += data;
+		if (data > datamax) datamax = data;
+		if (data < datamin) datamin = data;
+	}
+
+	if (highlight) {
+		/* prints some statistical data about the currently selected
+		 * data sample and auxiliary data. */
+		printf("result: freq %04d rssi %03d, noise %03d, max_magnitude %04d max_index %03d bitmap_weight %03d tsf %"PRIu64" | ",
+			result->sample.ht20.freq, result->sample.ht20.rssi, result->sample.ht20.noise,
+			result->sample.ht20.max_magnitude, result->sample.ht20.max_index, result->sample.ht20.bitmap_weight,
+			result->sample.ht20.tsf);
+		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+	}
+
+	for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
+		float freq;
+		int data;
+		/*
+		 * According to Dave Aragon from University of Washington,
+		 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
+		 * divide 22 MHz channel width into 64 subcarriers but
+		 * only report the middle 56 subcarriers.
+		 *
+		 * For 5 GHz we do not know (Atheros claims it does not support
+		 * this frequency band, but it works).
+		 *
+		 * Since all these calculations map pretty much to -10/+10 MHz,
+		 * and we don't know better, use this assumption as well in 5 GHz.
+		 */
+		freq = result->sample.ht20.freq -
+				(22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 +
+				(22.0 * (i + 0.5) / 64.0);
+
+		data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
+		plot_datapoint(pixels, freq, startfreq, result->sample.ht20.noise,
+			       result->sample.ht20.rssi, data, datasquaresum,
+			       highlight);
+	}
+
+	return 0;
+}
+
+static uint8_t get_max_exp(int8_t max_index, uint16_t max_magnitude, int bins, uint8_t *data)
+{
+	int dc_pos;
+	u8 max_exp;
+
+	dc_pos = bins / 2;
+	/* peak index outside of bins */
+	if (dc_pos < max_index || -dc_pos >= max_index)
+		return 0;
+
+	for (max_exp = 0; max_exp < 8; max_exp++) {
+		if (data[dc_pos + max_index] == (max_magnitude >> max_exp))
+			break;
+	}
+
+	/* max_exp not found */
+	if (data[dc_pos + max_index] != (max_magnitude >> max_exp))
+		return 0;
+
+	return max_exp;
+}
+
+int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result, float startfreq, int highlight)
+{
+	int datamax = 0, datamin = 65536;
+	int datasquaresum = 0;
+	int i, bins;
+
+	bins = result->sample.tlv.length -
+	       (sizeof(result->sample.ath10k.header) -
+		sizeof(result->sample.ath10k.header.tlv));
+
+
+	for (i = 0; i < bins; i++) {
+		int data;
+
+		data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
+		data *= data;
+		datasquaresum += data;
+		if (data > datamax) datamax = data;
+		if (data < datamin) datamin = data;
+	}
+
+	if (highlight) {
+		/* prints some statistical data about the currently selected
+		 * data sample and auxiliary data. */
+		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %03d, noise %03d, max_magnitude %04d max_index %03d tsf %"PRIu64" | ",
+		       result->sample.ath10k.header.freq1, result->sample.ath10k.header.freq1,
+		       result->sample.ath10k.header.chan_width_mhz,
+		       bins, result->sample.ath10k.header.rssi,
+		       result->sample.ath10k.header.noise, result->sample.ath10k.header.max_magnitude,
+		       result->sample.ath10k.header.max_index, result->sample.ath10k.header.tsf);
+		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+	}
+
+	for (i = 0; i < bins; i++) {
+		float freq;
+		int data;
+		freq = result->sample.ath10k.header.freq1 -
+				(result->sample.ath10k.header.chan_width_mhz ) / 2 +
+				(result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
+
+		data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
+		plot_datapoint(pixels, freq, startfreq, result->sample.ath10k.header.noise,
+			       result->sample.ath10k.header.rssi, data, datasquaresum,
+			       highlight);
+	}
+
+	return 0;
+}
+
+
 /*
  * draw_picture - draws the current screen.
  *
@@ -213,7 +406,7 @@ int render_text(SDL_Surface *surface, char *text, int x, int y)
  */
 int draw_picture(int highlight, int startfreq)
 {
-	Uint32 *pixels, color, opacity;
+	Uint32 *pixels;
 	int x, y, i, rnum;
 	int highlight_freq = startfreq + 20;
 	char text[1024];
@@ -254,75 +447,20 @@ int draw_picture(int highlight, int startfreq)
 
 	rnum = 0;
 	for (result = result_list; result ; result = result->next) {
-		int datamax = 0, datamin = 65536;
-		int datasquaresum = 0;
+		switch (result->sample.tlv.type) {
+		case ATH_FFT_SAMPLE_HT20:
+			if (rnum == highlight)
+				highlight_freq = result->sample.ht20.freq;
 
-		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-			int data;
+			draw_sample_ht20(pixels, result, startfreq, rnum == highlight);
+			break;
+		case ATH_FFT_SAMPLE_ATH10K:
+			if (rnum == highlight)
+				highlight_freq = result->sample.ath10k.header.freq1;
 
-			data = (result->sample.data[i] << result->sample.max_exp);
-			data *= data;
-			datasquaresum += data;
-			if (data > datamax) datamax = data;
-			if (data < datamin) datamin = data;
-		}
-
-		if (rnum == highlight) {
-			/* prints some statistical data about the currently selected 
-			 * data sample and auxiliary data. */
-			printf("result[%03d]: freq %04d rssi %03d, noise %03d, max_magnitude %04d max_index %03d bitmap_weight %03d tsf %"PRIu64" | ", 
-				rnum, result->sample.freq, result->sample.rssi, result->sample.noise,
-				result->sample.max_magnitude, result->sample.max_index, result->sample.bitmap_weight,
-				result->sample.tsf);
-			printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
-
-			highlight_freq = result->sample.freq;
-		}
-
-
-		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-			float freq;
-			float signal;
-			int data;
-			/*
-			 * According to Dave Aragon from University of Washington,
-			 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
-			 * divide 22 MHz channel width into 64 subcarriers but
-			 * only report the middle 56 subcarriers.
-			 *
-			 * For 5 GHz we do not know (Atheros claims it does not support
-			 * this frequency band, but it works).
-			 *
-			 * Since all these calculations map pretty much to -10/+10 MHz,
-			 * and we don't know better, use this assumption as well in 5 GHz.
-			 */
-			freq = result->sample.freq -
-					(22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 +
-					(22.0 * (i + 0.5) / 64.0);
-			
-			x = (X_SCALE * (freq - startfreq));
-
-			/* This is where the "magic" happens: interpret the signal
-			 * to output some kind of data which looks useful.  */
-
-			data = result->sample.data[i] << result->sample.max_exp;
-			if (data == 0)
-				data = 1;
-			signal = result->sample.noise + result->sample.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-
-			y = 400 - (400.0 + Y_SCALE * signal);
-
-			if (rnum == highlight) {
-				color = RMASK | AMASK;
-				opacity = 255;
-			} else {
-				color = BMASK | AMASK;
-				opacity = 30;
-			}
-
-			if (bigpixel(pixels, x, y, color, opacity) < 0)
-				continue;
-
+			draw_sample_ath10k(pixels, result, startfreq, rnum == highlight);
+			/* TODO */
+			break;
 		}
 		rnum++;
 	}
@@ -382,6 +520,7 @@ int read_scandata(char *fname)
 	struct scanresult *result;
 	struct fft_sample_tlv *tlv;
 	struct scanresult *tail = result_list;
+	int handled, bins;
 
 	scandata = read_file(fname, &len);
 	if (!scandata)
@@ -390,16 +529,15 @@ int read_scandata(char *fname)
 	pos = scandata;
 
 	while (pos - scandata < len) {
+#define CONVERT_BE16(val)	val = be16toh(val)
+#define CONVERT_BE64(val)	val = be64toh(val)
 		tlv = (struct fft_sample_tlv *) pos;
-		sample_len = sizeof(*tlv) + be16toh(tlv->length);
+		CONVERT_BE16(tlv->length);
+		sample_len = sizeof(*tlv) + tlv->length;
 		pos += sample_len;
-		if (tlv->type != ATH_FFT_SAMPLE_HT20) {
-			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
-			continue;
-		}
 
-		if (sample_len != sizeof(result->sample)) {
-			fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+		if (sample_len > sizeof(*result)) {
+			fprintf(stderr, "sample length %d too long\n", sample_len);
 			continue;
 		}
 
@@ -408,13 +546,53 @@ int read_scandata(char *fname)
 			continue;
 
 		memset(result, 0, sizeof(*result));
-		memcpy(&result->sample, tlv, sizeof(result->sample));
-		fprintf(stderr, "copy %zd bytes\n", sizeof(result->sample));
+		memcpy(&result->sample, tlv, sample_len);
 
-		result->sample.freq = be16toh(result->sample.freq);
-		result->sample.max_magnitude = be16toh(result->sample.max_magnitude);
-		result->sample.tsf = be64toh(result->sample.tsf);
-		
+		handled = 0;
+		switch (tlv->type) {
+		case ATH_FFT_SAMPLE_HT20:
+			if (sample_len != sizeof(result->sample.ht20)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
+					sample_len, sizeof(result->sample));
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ht20.freq);
+			CONVERT_BE16(result->sample.ht20.max_magnitude);
+			CONVERT_BE64(result->sample.ht20.tsf);
+
+			handled = 1;
+			break;
+		case ATH_FFT_SAMPLE_ATH10K:
+			bins = sample_len - sizeof(result->sample.ath10k.header);
+
+			if (bins != 64 &&
+			    bins != 128 &&
+			    bins != 256) {
+				fprintf(stderr, "invalid bin length %d\n", bins);
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ath10k.header.freq1);
+			CONVERT_BE16(result->sample.ath10k.header.freq2);
+			CONVERT_BE16(result->sample.ath10k.header.noise);
+			CONVERT_BE16(result->sample.ath10k.header.max_magnitude);
+			CONVERT_BE16(result->sample.ath10k.header.total_gain_db);
+			CONVERT_BE16(result->sample.ath10k.header.base_pwr_db);
+			CONVERT_BE64(result->sample.ath10k.header.tsf);
+
+			handled = 1;
+			break;
+		default:
+			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
+			break;
+		}
+
+		if (!handled) {
+			free(result);
+			continue;
+		}
+
 		if (tail)
 			tail->next = result;
 		else
@@ -545,6 +723,8 @@ void usage(int argc, char *argv[])
 	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan0 > /tmp/fft_results\n");
 	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl\n");
 	fprintf(stderr, "%s /tmp/fft_results\n", argv[0]);
+	fprintf(stderr, "\n");
+	fprintf(stderr, "for AR98xx based cards, replace ath9k with ath10k above.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
 	fprintf(stderr, "\n");

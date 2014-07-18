@@ -36,6 +36,8 @@ ifconfig wlan0 up
 iw dev wlan0 scan spec-scan
 cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan > /tmp/fft_results
 
+for AR98xx based cards, replace ath9k with ath10k above.
+
 There are some recorded samples in the "samples" directory to try it
 out without actual hardware.
 
