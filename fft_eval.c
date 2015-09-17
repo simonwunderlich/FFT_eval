@@ -24,13 +24,21 @@
  * based chipsets.
  */
 
-#define _BSD_SOURCE
-#include <endian.h>
+#ifdef __APPLE__
+  #include <libkern/OSByteOrder.h>
+  #define CONVERT_BE16(val)	val = OSSwapBigToHostInt16(val)
+  #define CONVERT_BE64(val)	val = OSSwapBigToHostInt64(val)
+#else
+  #define _BSD_SOURCE
+  #include <endian.h>
+  #define CONVERT_BE16(val)	val = be16toh(val)
+  #define CONVERT_BE64(val)	val = be64toh(val)
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_ttf.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
 #include <inttypes.h>
 
 typedef int8_t s8;
@@ -554,15 +562,13 @@ int read_scandata(char *fname)
 	pos = scandata;
 
 	while (pos - scandata < len) {
-#define CONVERT_BE16(val)	val = be16toh(val)
-#define CONVERT_BE64(val)	val = be64toh(val)
 		tlv = (struct fft_sample_tlv *) pos;
 		CONVERT_BE16(tlv->length);
 		sample_len = sizeof(*tlv) + tlv->length;
 		pos += sample_len;
 
 		if (sample_len > sizeof(*result)) {
-			fprintf(stderr, "sample length %d too long\n", sample_len);
+			fprintf(stderr, "sample length %zu too long\n", sample_len);
 			continue;
 		}
 

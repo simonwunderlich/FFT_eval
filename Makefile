@@ -1,7 +1,7 @@
 BIN=fft_eval
 OBJ=fft_eval.o
-LIBS=-lSDL -lSDL_ttf -lm
-CC=gcc -std=c99 -O2 -Wall
+LIBS=$(shell pkg-config sdl --libs) -lSDL_ttf -lm
+CC=gcc $(shell pkg-config sdl --cflags) -std=c99 -O2 -Wall
 LD=gcc
 .SUFFIXES: .o .c
 .c.o:
