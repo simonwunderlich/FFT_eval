@@ -1,8 +1,8 @@
 BIN=fft_eval
 OBJ=fft_eval.o
-LIBS=-lSDL -lSDL_ttf -lm
-CC=gcc -std=c99 -O2 -Wall
-LD=gcc
+LIBS=-L/usr/local/lib -lSDL -lSDL_ttf -lm
+CC=cc -std=c99 -O2 -Wall -I/usr/local/include
+LD=cc
 .SUFFIXES: .o .c
 .c.o:
 	$(CC) -c -o $@ $<
