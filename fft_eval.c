@@ -30,7 +30,11 @@
   #define CONVERT_BE64(val)	val = OSSwapBigToHostInt64(val)
 #else
   #define _BSD_SOURCE
-  #include <endian.h>
+  #ifdef	__FreeBSD__
+    #include <sys/endian.h>
+  #else
+    #include <endian.h>
+  #endif	/* __FreeBSD__ */
   #define CONVERT_BE16(val)	val = be16toh(val)
   #define CONVERT_BE64(val)	val = be64toh(val)
 #endif
