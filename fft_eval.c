@@ -25,7 +25,11 @@
  */
 
 #define _BSD_SOURCE
+#ifdef	__FreeBSD__
+#include <sys/endian.h>
+#else
 #include <endian.h>
+#endif	/* __FreeBSD__ */
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
