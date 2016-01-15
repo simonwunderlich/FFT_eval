@@ -48,14 +48,22 @@ typedef uint64_t u64;
 
 enum ath_fft_sample_type {
         ATH_FFT_SAMPLE_HT20 = 1,
+        ATH_FFT_SAMPLE_HT20_40 = 2,
 	ATH_FFT_SAMPLE_ATH10K = 3,
+};
+
+enum nl80211_channel_type {
+	NL80211_CHAN_NO_HT,
+	NL80211_CHAN_HT20,
+	NL80211_CHAN_HT40MINUS,
+	NL80211_CHAN_HT40PLUS
 };
 
 /*
  * ath9k spectral definition
- * TODO: HT40 still missing, any volunteers?
  */
 #define SPECTRAL_HT20_NUM_BINS          56
+#define SPECTRAL_HT20_40_NUM_BINS		128
 
 struct fft_sample_tlv {
         u8 type;        /* see ath_fft_sample */
@@ -79,6 +87,34 @@ struct fft_sample_ht20 {
         u64 tsf;
 
         u8 data[SPECTRAL_HT20_NUM_BINS];
+} __attribute__((packed));
+
+struct fft_sample_ht20_40 {
+	struct fft_sample_tlv tlv;
+
+	u8 channel_type;
+	u16 freq;
+
+	s8 lower_rssi;
+	s8 upper_rssi;
+
+	u64 tsf;
+
+	s8 lower_noise;
+	s8 upper_noise;
+
+	u16 lower_max_magnitude;
+	u16 upper_max_magnitude;
+
+	u8 lower_max_index;
+	u8 upper_max_index;
+
+	u8 lower_bitmap_weight;
+	u8 upper_bitmap_weight;
+
+	u8 max_exp;
+
+	u8 data[SPECTRAL_HT20_40_NUM_BINS];
 } __attribute__((packed));
 
 /*
@@ -111,6 +147,7 @@ struct scanresult {
 	union {
 		struct fft_sample_tlv tlv;
 		struct fft_sample_ht20 ht20;
+		struct fft_sample_ht20_40 ht40;
 		struct {
 			struct fft_sample_ath10k header;
 			u8 data[SPECTRAL_ATH10K_MAX_NUM_BINS];
@@ -354,6 +391,101 @@ int draw_sample_ht20(Uint32 *pixels, struct scanresult *result, float startfreq,
 	return 0;
 }
 
+
+static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
+			       float startfreq, int highlight)
+{
+	int datamax = 0, datamin = 65536;
+	int datasquaresum_lower = 0;
+	int datasquaresum_upper = 0;
+	int datasquaresum;
+	int i;
+	int centerfreq;
+	s8 noise;
+	s8 rssi;
+
+	for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
+		int data;
+
+		data = result->sample.ht40.data[i];
+		data <<= result->sample.ht40.max_exp;
+		data *= data;
+		datasquaresum_lower += data;
+
+		if (data > datamax) datamax = data;
+		if (data < datamin) datamin = data;
+	}
+
+	for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
+		int data;
+
+		data = result->sample.ht40.data[i];
+		data <<= result->sample.ht40.max_exp;
+		datasquaresum_upper += data;
+
+		if (data > datamax) datamax = data;
+		if (data < datamin) datamin = data;
+	}
+
+	switch (result->sample.ht40.channel_type) {
+	case NL80211_CHAN_HT40PLUS:
+		centerfreq = result->sample.ht40.freq + 10;
+		break;
+	case NL80211_CHAN_HT40MINUS:
+		centerfreq = result->sample.ht40.freq - 10;
+		break;
+	default:
+		return -1;
+	}
+
+	if (highlight) {
+		/* prints some statistical data about the currently selected
+		 * data sample and auxiliary data. */
+		printf("result: freq %04d lower_rssi %03d, upper_rssi %03d, lower_noise %03d, upper_noise %03d, lower_max_magnitude %04d upper_max_magnitude %04d lower_max_index %03d upper_max_index %03d lower_bitmap_weight %03d upper_bitmap_weight %03d tsf %"PRIu64" | ",
+		       result->sample.ht40.freq, result->sample.ht40.lower_rssi,
+		       result->sample.ht40.upper_rssi,
+		       result->sample.ht40.lower_noise,
+		       result->sample.ht40.upper_noise,
+		       result->sample.ht40.lower_max_magnitude,
+		       result->sample.ht40.upper_max_magnitude,
+		       result->sample.ht40.lower_max_index,
+		       result->sample.ht40.upper_max_index,
+		       result->sample.ht40.lower_bitmap_weight,
+		       result->sample.ht40.upper_bitmap_weight,
+		       result->sample.ht40.tsf);
+		printf("datamax = %d, datamin = %d, datasquaresum_lower = %d\n",
+		       datamax, datamin, datasquaresum_lower);
+		printf("datamax = %d, datamin = %d, datasquaresum_upper = %d\n",
+		       datamax, datamin, datasquaresum_upper);
+	}
+
+	for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
+		float freq;
+		int data;
+
+		freq = centerfreq -
+				(40.0 * SPECTRAL_HT20_40_NUM_BINS / 128.0) / 2 +
+				(40.0 * (i + 0.5) / 128.0);
+
+		if (i < SPECTRAL_HT20_40_NUM_BINS / 2) {
+			noise = result->sample.ht40.lower_noise;
+			datasquaresum = datasquaresum_lower;
+			rssi = result->sample.ht40.lower_rssi;
+		} else {
+			noise = result->sample.ht40.upper_noise;
+			datasquaresum = datasquaresum_upper;
+			rssi = result->sample.ht40.upper_rssi;
+		}
+
+		data = result->sample.ht40.data[i];
+		data <<= result->sample.ht40.max_exp;
+		plot_datapoint(pixels, freq, startfreq, noise, rssi, data,
+			       datasquaresum, highlight);
+	}
+
+	return 0;
+}
+
 static uint8_t get_max_exp(int8_t max_index, uint16_t max_magnitude, int bins, uint8_t *data)
 {
 	int dc_pos;
@@ -487,6 +619,12 @@ int draw_picture(int highlight, int startfreq)
 
 			draw_sample_ht20(pixels, result, startfreq, rnum == highlight);
 			break;
+		case ATH_FFT_SAMPLE_HT20_40:
+			if (rnum == highlight)
+				highlight_freq = result->sample.ht40.freq;
+
+			draw_sample_ht20_40(pixels, result, startfreq, rnum == highlight);
+			break;
 		case ATH_FFT_SAMPLE_ATH10K:
 			if (rnum == highlight)
 				highlight_freq = result->sample.ath10k.header.freq1;
@@ -591,6 +729,20 @@ int read_scandata(char *fname)
 			CONVERT_BE16(result->sample.ht20.freq);
 			CONVERT_BE16(result->sample.ht20.max_magnitude);
 			CONVERT_BE64(result->sample.ht20.tsf);
+
+			handled = 1;
+			break;
+		case ATH_FFT_SAMPLE_HT20_40:
+			if (sample_len != sizeof(result->sample.ht40)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
+					sample_len, sizeof(result->sample));
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ht40.freq);
+			CONVERT_BE64(result->sample.ht40.tsf);
+			CONVERT_BE16(result->sample.ht40.lower_max_magnitude);
+			CONVERT_BE16(result->sample.ht40.upper_max_magnitude);
 
 			handled = 1;
 			break;
