@@ -234,6 +234,12 @@ static int graphics_init_sdl(char *name, const char *fontdir)
 
 static void graphics_quit_sdl(void)
 {
+	if (font) {
+		TTF_CloseFont(font);
+		font = NULL;
+	}
+
+	TTF_Quit();
 	SDL_Quit();
 }
 
