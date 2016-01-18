@@ -237,18 +237,6 @@ static void graphics_quit_sdl(void)
 	SDL_Quit();
 }
 
-static int pixel(Uint32 *pixels, int x, int y, Uint32 color)
-{
-	if (x < 0 || x >= WIDTH)
-		return -1;
-	if (y < 0 || y >= HEIGHT)
-		return -1;
-
-	pixels[x + y * WIDTH] |= color;
-	return 0;
-}
-
-
 #define SIZE 3
 /* this function blends a 2*SIZE x 2*SIZE blob at the given position with
  * the defined opacity. */
