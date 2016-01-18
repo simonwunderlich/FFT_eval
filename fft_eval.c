@@ -709,7 +709,7 @@ int read_scandata(char *fname)
 
 	pos = scandata;
 
-	while (pos - scandata < len) {
+	while ((uintptr_t)(pos - scandata) < len) {
 		tlv = (struct fft_sample_tlv *) pos;
 		CONVERT_BE16(tlv->length);
 		sample_len = sizeof(*tlv) + tlv->length;
