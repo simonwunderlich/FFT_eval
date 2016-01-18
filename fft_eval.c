@@ -496,28 +496,6 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 	return 0;
 }
 
-static uint8_t get_max_exp(int8_t max_index, uint16_t max_magnitude, int bins, uint8_t *data)
-{
-	int dc_pos;
-	u8 max_exp;
-
-	dc_pos = bins / 2;
-	/* peak index outside of bins */
-	if (dc_pos < max_index || -dc_pos >= max_index)
-		return 0;
-
-	for (max_exp = 0; max_exp < 8; max_exp++) {
-		if (data[dc_pos + max_index] == (max_magnitude >> max_exp))
-			break;
-	}
-
-	/* max_exp not found */
-	if (data[dc_pos + max_index] != (max_magnitude >> max_exp))
-		return 0;
-
-	return max_exp;
-}
-
 int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result, float startfreq, int highlight)
 {
 	int datamax = 0, datamin = 65536;
