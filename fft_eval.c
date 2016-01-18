@@ -968,5 +968,7 @@ int main(int argc, char *argv[])
 	}
 	graphics_main(ss_name, fontdir);
 
+	free(fontdir);
+
 	return 0;
 }
