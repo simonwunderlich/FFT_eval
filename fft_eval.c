@@ -773,6 +773,8 @@ static int read_scandata(char *fname)
 	}
 
 	fprintf(stderr, "read %d scan results\n", scanresults_n);
+	free(scandata);
+
 	return 0;
 }
 
