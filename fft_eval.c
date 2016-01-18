@@ -633,6 +633,7 @@ static char *read_file(char *fname, size_t *size)
 {
 	FILE *fp;
 	char *buf = NULL;
+	char *newbuf;
 	size_t ret;
 
 	fp = fopen(fname, "r");
@@ -643,9 +644,13 @@ static char *read_file(char *fname, size_t *size)
 	*size = 0;
 	while (!feof(fp)) {
 
-		buf = realloc(buf, *size + 4097);
-		if (!buf)
+		newbuf = realloc(buf, *size + 4097);
+		if (!newbuf) {
+			free(buf);
 			return NULL;
+		}
+
+		buf = newbuf;
 
 		ret = fread(buf + *size, 1, 4096, fp);
 		*size += ret;
