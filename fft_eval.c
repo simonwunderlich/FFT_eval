@@ -921,6 +921,20 @@ static void usage(const char *prog)
 
 }
 
+static void free_scandata(void)
+{
+	struct scanresult *list = result_list;
+	struct scanresult *next;
+
+	while (list) {
+		next = list->next;
+		free(list);
+		list = next;
+	}
+
+	result_list = NULL;
+}
+
 int main(int argc, char *argv[])
 {
 	int ch;
@@ -975,6 +989,7 @@ int main(int argc, char *argv[])
 	graphics_main(ss_name, fontdir);
 
 	free(fontdir);
+	free_scandata();
 
 	return 0;
 }
