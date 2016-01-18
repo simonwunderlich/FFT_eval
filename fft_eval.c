@@ -177,13 +177,13 @@ struct scanresult {
 #define	AMASK	0xff000000
 
 
-SDL_Surface *screen = NULL;
-TTF_Font *font = NULL;
-struct scanresult *result_list;
-int scanresults_n = 0;
+static SDL_Surface *screen = NULL;
+static TTF_Font *font = NULL;
+static struct scanresult *result_list;
+static int scanresults_n = 0;
 static int color_invert = 0;
 
-int graphics_init_sdl(char *name, const char *fontdir)
+static int graphics_init_sdl(char *name, const char *fontdir)
 {
 	SDL_VideoInfo *VideoInfo;
 	int SDLFlags;
@@ -232,12 +232,12 @@ int graphics_init_sdl(char *name, const char *fontdir)
 	return 0;
 }
 
-void graphics_quit_sdl(void)
+static void graphics_quit_sdl(void)
 {
 	SDL_Quit();
 }
 
-int pixel(Uint32 *pixels, int x, int y, Uint32 color)
+static int pixel(Uint32 *pixels, int x, int y, Uint32 color)
 {
 	if (x < 0 || x >= WIDTH)
 		return -1;
@@ -252,7 +252,7 @@ int pixel(Uint32 *pixels, int x, int y, Uint32 color)
 #define SIZE 3
 /* this function blends a 2*SIZE x 2*SIZE blob at the given position with
  * the defined opacity. */
-int bigpixel(Uint32 *pixels, int x, int y, Uint32 color, uint8_t opacity)
+static int bigpixel(Uint32 *pixels, int x, int y, Uint32 color, uint8_t opacity)
 {
 	int x1, y1;
 
@@ -289,7 +289,7 @@ int bigpixel(Uint32 *pixels, int x, int y, Uint32 color, uint8_t opacity)
 	return 0;
 }
 
-int render_text(SDL_Surface *surface, char *text, int x, int y)
+static int render_text(SDL_Surface *surface, char *text, int x, int y)
 {
 	SDL_Surface *text_surface;
 	SDL_Color fontcolor_white = {255, 255, 255, 255};
@@ -317,7 +317,9 @@ int render_text(SDL_Surface *surface, char *text, int x, int y)
 }
 
 
-int plot_datapoint(Uint32 *pixels, float freq, float startfreq, int noise, int rssi, int data, int datasquaresum, int highlight)
+static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
+			  int noise, int rssi, int data, int datasquaresum,
+			  int highlight)
 {
 	Uint32 color, opacity;
 	int x, y;
@@ -347,7 +349,8 @@ int plot_datapoint(Uint32 *pixels, float freq, float startfreq, int noise, int r
 }
 
 
-int draw_sample_ht20(Uint32 *pixels, struct scanresult *result, float startfreq, int highlight)
+static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
+			    float startfreq, int highlight)
 {
 	int datamax = 0, datamin = 65536;
 	int datasquaresum = 0;
@@ -496,7 +499,8 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 	return 0;
 }
 
-int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result, float startfreq, int highlight)
+static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
+			      float startfreq, int highlight)
 {
 	int datamax = 0, datamin = 65536;
 	int datasquaresum = 0;
@@ -553,7 +557,7 @@ int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result, float startfre
  *
  * returns the center frequency of the currently highlighted dataset
  */
-int draw_picture(int highlight, int startfreq)
+static int draw_picture(int highlight, int startfreq)
 {
 	Uint32 *pixels;
 	int x, y, i, rnum;
@@ -637,7 +641,7 @@ int draw_picture(int highlight, int startfreq)
  *
  * returns the buffer with the files content
  */
-char *read_file(char *fname, size_t *size)
+static char *read_file(char *fname, size_t *size)
 {
 	FILE *fp;
 	char *buf = NULL;
@@ -672,7 +676,7 @@ char *read_file(char *fname, size_t *size)
  *
  * returns 0 on success, -1 on error.
  */
-int read_scandata(char *fname)
+static int read_scandata(char *fname)
 {
 	char *pos, *scandata;
 	size_t len, sample_len;
@@ -782,7 +786,7 @@ int read_scandata(char *fname)
  * graphics_main - sets up the data and holds the mainloop.
  *
  */
-void graphics_main(char *name, char *fontdir)
+static void graphics_main(char *name, char *fontdir)
 {
 	SDL_Event event;
 	int quit = 0;
@@ -884,7 +888,7 @@ void graphics_main(char *name, char *fontdir)
 	graphics_quit_sdl();
 }
 
-void usage(const char *prog)
+static void usage(const char *prog)
 {
 	if (!prog)
 		prog = "fft_eval";
