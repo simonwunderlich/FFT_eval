@@ -657,7 +657,8 @@ static char *read_file(char *fname, size_t *size)
 	}
 	fclose(fp);
 
-	buf[*size] = 0;
+	if (buf)
+		buf[*size] = '\0';
 
 	return buf;
 }
