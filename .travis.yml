@@ -1,0 +1,14 @@
+sudo: required
+dist: trusty
+language: c
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    packages:
+    - pkg-config
+    - libsdl1.2-dev
+    - libsdl-ttf2.0-dev
+script:
+ - make clean && make -j$(nproc)
