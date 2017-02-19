@@ -791,6 +791,7 @@ static int read_scandata(char *fname)
 static void graphics_main(char *name, char *fontdir)
 {
 	SDL_Event event;
+	char *videodrv, videodrv_buf[256];
 	int quit = 0;
 	int highlight = 0;
 	int change = 1, scroll = 0;
@@ -801,6 +802,12 @@ static void graphics_main(char *name, char *fontdir)
 		fprintf(stderr, "Failed to initialize graphics.\n");
 		return;
 	}
+
+	/* don't hang forever with dummy video driver */
+	videodrv = SDL_VideoDriverName(videodrv_buf, sizeof(videodrv_buf));
+	if (!videodrv || strcmp(videodrv, "dummy") == 0)
+		quit = 1;
+
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	while (!quit) {
 		if (change) {

@@ -79,8 +79,15 @@ install: $(BINARY_NAME)
 	$(MKDIR) $(DESTDIR)$(BINDIR)
 	$(INSTALL) -m 0755 $(BINARY_NAME) $(DESTDIR)$(BINDIR)
 
+test: $(BINARY_NAME)
+	set -e; \
+	for i in $(wildcard samples/*.dump); do \
+		echo $$i; \
+		SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=disk $(TESTRUN_WRAPPER) ./$(BINARY_NAME) $$i; \
+	done
+
 # load dependencies
 DEP = $(OBJ:.o=.d) $(OBJ_BISECT:.o=.d)
 -include $(DEP)
 
-.PHONY: all clean install
+.PHONY: all clean install test
