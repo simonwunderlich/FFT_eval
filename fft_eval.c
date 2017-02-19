@@ -714,7 +714,7 @@ static int read_scandata(char *fname)
 		case ATH_FFT_SAMPLE_HT20:
 			if (sample_len != sizeof(result->sample.ht20)) {
 				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
-					sample_len, sizeof(result->sample));
+					sample_len, sizeof(result->sample.ht20));
 				break;
 			}
 
@@ -727,7 +727,7 @@ static int read_scandata(char *fname)
 		case ATH_FFT_SAMPLE_HT20_40:
 			if (sample_len != sizeof(result->sample.ht40)) {
 				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
-					sample_len, sizeof(result->sample));
+					sample_len, sizeof(result->sample.ht40));
 				break;
 			}
 
@@ -739,6 +739,12 @@ static int read_scandata(char *fname)
 			handled = 1;
 			break;
 		case ATH_FFT_SAMPLE_ATH10K:
+			if (sample_len < sizeof(result->sample.ath10k.header)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
+					sample_len, sizeof(result->sample.ath10k.header));
+				break;
+			}
+
 			bins = sample_len - sizeof(result->sample.ath10k.header);
 
 			if (bins != 64 &&
