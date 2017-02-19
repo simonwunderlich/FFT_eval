@@ -680,6 +680,7 @@ static int read_scandata(char *fname)
 {
 	char *pos, *scandata;
 	size_t len, sample_len;
+	size_t rel_pos, remaining_len;
 	struct scanresult *result;
 	struct fft_sample_tlv *tlv;
 	struct scanresult *tail = result_list;
@@ -692,10 +693,23 @@ static int read_scandata(char *fname)
 	pos = scandata;
 
 	while ((uintptr_t)(pos - scandata) < len) {
+		rel_pos = pos - scandata;
+		remaining_len = len - rel_pos;
+
+		if (remaining_len < sizeof(*tlv)) {
+			fprintf(stderr, "Found incomplete TLV header at position 0x%x\n", rel_pos);
+			break;
+		}
+
 		tlv = (struct fft_sample_tlv *) pos;
 		CONVERT_BE16(tlv->length);
 		sample_len = sizeof(*tlv) + tlv->length;
 		pos += sample_len;
+
+		if (remaining_len < sample_len) {
+			fprintf(stderr, "Found incomplete TLV at position 0x%x\n", rel_pos);
+			break;
+		}
 
 		if (sample_len > sizeof(*result)) {
 			fprintf(stderr, "sample length %zu too long\n", sample_len);
