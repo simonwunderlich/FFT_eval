@@ -1,6 +1,8 @@
 /* 
  * Copyright (C) 2012 Simon Wunderlich <sw@simonwunderlich.de>
  * Copyright (C) 2012 Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
+ * Copyright (C) 2013 Gui Iribarren <gui@altermundi.net>
+ * Copyright (C) 2017 Nico Pace <nicopace@altermundi.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of version 2 of the GNU General Public
@@ -41,8 +43,12 @@
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
-#include <SDL.h>
-#include <SDL_ttf.h>
+
+#ifdef __SDL__
+  #include <SDL.h>
+  #include <SDL_ttf.h>
+#endif
+
 #include <inttypes.h>
 #include <unistd.h>
 
@@ -161,6 +167,11 @@ struct scanresult {
 	struct scanresult *next;
 };
 
+static struct scanresult *result_list;
+static int scanresults_n = 0;
+
+#ifdef __SDL__
+
 #define WIDTH	1600
 #define HEIGHT	650
 #define BPP	32
@@ -179,8 +190,6 @@ struct scanresult {
 
 static SDL_Surface *screen = NULL;
 static TTF_Font *font = NULL;
-static struct scanresult *result_list;
-static int scanresults_n = 0;
 static int color_invert = 0;
 
 static int graphics_init_sdl(char *name, const char *fontdir)
@@ -629,6 +638,8 @@ static int draw_picture(int highlight, int startfreq)
 	return highlight_freq;
 }
 
+#endif
+
 /* read_file - reads an file into a big buffer and returns it
  *
  * @fname: file name
@@ -804,6 +815,7 @@ static int read_scandata(char *fname)
 	return 0;
 }
 
+#ifdef __SDL__
 /*
  * graphics_main - sets up the data and holds the mainloop.
  *
@@ -1013,7 +1025,10 @@ int main(int argc, char *argv[])
 		usage(prog);
 		return -1;
 	}
+#ifdef __SDL__
 	graphics_main(ss_name, fontdir);
+#endif
+
 
 	free(fontdir);
 	free_scandata();
