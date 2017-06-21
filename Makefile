@@ -72,6 +72,11 @@ all: $(BINARY_NAME)
 $(BINARY_NAME): $(OBJ)
 	$(LINK.o) $^ $(LDLIBS) -o $@
 
+
+nosdl: $(OBJ)
+	$(COMPILE.c) -D__NOSDL__ -o fft_eval.o fft_eval.c
+	$(LINK.o) $^ $(LDLIBS) -D__NOSDL__ -o fft_eval
+
 clean:
 	$(RM) $(BINARY_NAME) $(OBJ) $(OBJ_BISECT) $(DEP)
 
