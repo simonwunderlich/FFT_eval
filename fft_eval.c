@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#ifdef __SDL__
+#ifndef __NOSDL__
   #include <SDL.h>
   #include <SDL_ttf.h>
 #endif
@@ -170,7 +170,7 @@ struct scanresult {
 static struct scanresult *result_list;
 static int scanresults_n = 0;
 
-#ifdef __SDL__
+#ifndef __NOSDL__
 
 #define WIDTH	1600
 #define HEIGHT	650
@@ -815,7 +815,7 @@ static int read_scandata(char *fname)
 	return 0;
 }
 
-#ifdef __SDL__
+#ifndef __NOSDL__
 /*
  * graphics_main - sets up the data and holds the mainloop.
  *
@@ -929,6 +929,8 @@ static void graphics_main(char *name, char *fontdir)
 	graphics_quit_sdl();
 }
 
+#endif
+
 static void usage(const char *prog)
 {
 	if (!prog)
@@ -1025,7 +1027,7 @@ int main(int argc, char *argv[])
 		usage(prog);
 		return -1;
 	}
-#ifdef __SDL__
+#ifndef __NOSDL__
 	graphics_main(ss_name, fontdir);
 #endif
 
