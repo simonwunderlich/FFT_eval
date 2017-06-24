@@ -70,3 +70,5 @@ AUTHOR
 
 This software has been written by Simon Wunderlich <sw@simonwunderlich.de>
 for Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
+and then adapted (stripped SDL code) by Gui Iribarren <gui@altermundi.net>
+and integrated as part of the codebase by Nico Pace <nicopace@altermundi.net>
