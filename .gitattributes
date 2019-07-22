@@ -1,0 +1,7 @@
+* text=auto
+
+*.ttf binary
+*.dump binary
+
+*.c   diff=cpp
+*.h   diff=cpp
