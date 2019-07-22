@@ -28,10 +28,21 @@
 
 #include "fft_eval.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
   #include <libkern/OSByteOrder.h>
   #define CONVERT_BE16(val)	val = OSSwapBigToHostInt16(val)
   #define CONVERT_BE64(val)	val = OSSwapBigToHostInt64(val)
+#elif defined(_WIN32)
+  #define __USE_MINGW_ANSI_STDIO 1
+  #if __BYTE_ORDER == __LITTLE_ENDIAN
+    #define CONVERT_BE16(val)	val = _byteswap_ushort(val)
+    #define CONVERT_BE64(val)	val = _byteswap_uint64(val)
+  #elif __BYTE_ORDER == __BIG_ENDIAN
+    #define CONVERT_BE16(val)
+    #define CONVERT_BE64(val)
+  #else
+    #error Endianess undefined
+  #endif
 #else
   #ifdef	__FreeBSD__
     #include <sys/endian.h>
@@ -65,7 +76,7 @@ static char *read_file(char *fname, size_t *size)
 	char *newbuf;
 	size_t ret;
 
-	fp = fopen(fname, "r");
+	fp = fopen(fname, "rb");
 
 	if (!fp)
 		return NULL;

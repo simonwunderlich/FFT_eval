@@ -43,7 +43,7 @@ endif
 ifeq ($(CONFIG_fft_eval_sdl),y)
   # test for presence of SDL
   ifeq ($(origin SDL_CFLAGS) $(origin SDL_LDLIBS), undefined undefined)
-    SDL2_CONFIG = sdl2-config
+    SDL2_CONFIG = $(CROSS)sdl2-config
     ifeq ($(shell which $(SDL2_CONFIG) 2>/dev/null),)
       $(error No SDL development libraries found!)
     endif
@@ -54,7 +54,7 @@ ifeq ($(CONFIG_fft_eval_sdl),y)
   LDLIBS_fft_eval_sdl += $(SDL_LDLIBS)
   
   ifeq ($(origin PKG_CONFIG), undefined)
-    PKG_CONFIG = pkg-config
+    PKG_CONFIG = $(CROSS)pkg-config
     ifeq ($(shell which $(PKG_CONFIG) 2>/dev/null),)
       $(error $(PKG_CONFIG) not found)
     endif
@@ -72,7 +72,7 @@ ifeq ($(CONFIG_fft_eval_sdl),y)
   LDLIBS_fft_eval_sdl += $(LIBSDL2TTF_LDLIBS)
 endif
 
-CC ?= cc
+CC = $(CROSS)gcc
 RM ?= rm -f
 INSTALL ?= install
 MKDIR ?= mkdir -p

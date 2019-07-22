@@ -35,6 +35,10 @@ enum nl80211_channel_type {
 #define SPECTRAL_HT20_NUM_BINS          56
 #define SPECTRAL_HT20_40_NUM_BINS		128
 
+#if defined(__WIN32__)
+#pragma pack(push,1)
+#endif
+
 struct fft_sample_tlv {
         u8 type;        /* see ath_fft_sample */
         u16 length;
@@ -111,6 +115,10 @@ struct fft_sample_ath10k {
 
 	u8 data[0];
 } __attribute__((packed));
+
+#if defined(__WIN32__)
+#pragma pack(pop)
+#endif
 
 
 struct scanresult {
