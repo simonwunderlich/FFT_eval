@@ -78,7 +78,7 @@ static int print_values(void)
 					data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
 					if (data == 0)
 						data = 1;
-					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10(data) - log10(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
 					if (i < SPECTRAL_HT20_NUM_BINS - 1)
@@ -159,7 +159,7 @@ static int print_values(void)
 					if (data == 0)
 						data = 1;
 
-					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					float signal = noise + rssi + 20 * log10(data) - log10(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
 					if (i < SPECTRAL_HT20_40_NUM_BINS - 1)
@@ -198,7 +198,7 @@ static int print_values(void)
 					data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
 					if (data == 0)
 						data = 1;
-					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10(data) - log10(datasquaresum) * 10;
 					printf("[ %f, %f ]", freq, signal);
 					if (i < bins - 1)
 						printf(", ");
