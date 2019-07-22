@@ -707,7 +707,7 @@ static int read_scandata(char *fname)
 		remaining_len = len - rel_pos;
 
 		if (remaining_len < sizeof(*tlv)) {
-			fprintf(stderr, "Found incomplete TLV header at position 0x%x\n", rel_pos);
+			fprintf(stderr, "Found incomplete TLV header at position 0x%zx\n", rel_pos);
 			break;
 		}
 
@@ -717,7 +717,7 @@ static int read_scandata(char *fname)
 		pos += sample_len;
 
 		if (remaining_len < sample_len) {
-			fprintf(stderr, "Found incomplete TLV at position 0x%x\n", rel_pos);
+			fprintf(stderr, "Found incomplete TLV at position 0x%zx\n", rel_pos);
 			break;
 		}
 
