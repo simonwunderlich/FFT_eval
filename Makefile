@@ -95,18 +95,28 @@ $(obj-y):
 	$(LINK.o) $^ $(LDLIBS) $(LDLIBS_$(@)) -o $@
 
 clean:
-	$(RM) $(BINARY_NAMES) $(OBJ) $(DEP)
+	$(RM) $(BINARY_NAMES) $(OBJ) $(DEP) samples/*.test
 
 install: $(obj-y)
 	$(MKDIR) $(DESTDIR)$(BINDIR)
 	$(INSTALL) -m 0755 $(obj-y) $(DESTDIR)$(BINDIR)
 
 ifeq ($(CONFIG_fft_eval_sdl),y)
-test: fft_eval_sdl
+test:: fft_eval_sdl
 	set -e; \
 	for i in $(wildcard samples/*.dump); do \
 		echo $$i; \
 		SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=disk $(TESTRUN_WRAPPER) ./fft_eval_sdl $$i; \
+	done
+endif
+
+ifeq ($(CONFIG_fft_eval_json),y)
+test:: fft_eval_json
+	set -e; \
+	for i in $(wildcard samples/*.dump); do \
+		echo $$i; \
+		$(TESTRUN_WRAPPER) ./fft_eval_json $$i > $$i.test; \
+		cmp $$i.test $$i.json; \
 	done
 endif
 

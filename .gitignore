@@ -1,4 +1,5 @@
 /*.d
 /*.o
+/samples.test
 /fft_eval_json
 /fft_eval_sdl
