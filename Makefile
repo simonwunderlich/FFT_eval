@@ -7,7 +7,7 @@ OBJ = fft_eval.o
 
 # fft_eval flags and options
 CFLAGS += -Wall -W -std=gnu99 -fno-strict-aliasing -MD -MP
-CPPFLAGS += -D_GNU_SOURCE
+CPPFLAGS += -D_DEFAULT_SOURCE
 LDLIBS += -lm
 
 # disable verbose output
