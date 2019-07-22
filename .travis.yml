@@ -18,14 +18,16 @@ env:
    - TESTRUN_WRAPPER='valgrind -q --error-exitcode=126 --track-origins=yes --leak-check=full' CFLAGS="-O1 -g3"
    - CFLAGS="-g3 -fsanitize=undefined -fsanitize=address -fsanitize=leak"
 script:
- - make clean && make -j$(nproc) test
+ - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} -j$(nproc) test
 
 matrix:
   include:
     # test without sdl installed
     - os: linux
+      env:
+      - MAKE_FLAGS="CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y V=s"
       script:
-      - make CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y clean && make CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y test
+      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test
     # windows cross-compiler
     - os: linux
       env:
