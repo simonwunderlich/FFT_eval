@@ -69,40 +69,36 @@
 #define	AMASK	0xff000000
 
 
-static SDL_Surface *screen = NULL;
+static SDL_Renderer *renderer = NULL;
 static TTF_Font *font = NULL;
 static int color_invert = 0;
 
 static int graphics_init_sdl(char *name, const char *fontdir)
 {
-	SDL_VideoInfo *VideoInfo;
-	int SDLFlags;
+	SDL_Window *window;
+	int SDLFlags = 0;
 	char buf[1024];
-
-	SDLFlags = SDL_HWPALETTE | SDL_RESIZABLE;
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
 		fprintf(stderr, "Initializing SDL failed\n");
 		return -1;
 	}
-		
-	if ((VideoInfo = (SDL_VideoInfo *) SDL_GetVideoInfo()) == NULL) {
-		fprintf(stderr, "Getting SDL Video Info failed\n");
+
+	SDLFlags |= SDL_WINDOW_RESIZABLE;
+
+	window = SDL_CreateWindow(name, SDL_WINDOWPOS_UNDEFINED,
+				  SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT,
+				  SDLFlags);
+	if (!window) {
+		fprintf(stderr, "Initializing SDL window failed\n");
 		return -1;
 	}
 
-	else {
-		if (VideoInfo->hw_available) {
-			SDLFlags |= SDL_HWSURFACE;
-		} else {
-			SDLFlags |= SDL_SWSURFACE;
-		}
-		if (VideoInfo->blit_hw)
-			SDLFlags |= SDL_HWACCEL;
+	renderer = SDL_CreateRenderer(window, -1, 0);
+	if (!renderer) {
+		fprintf(stderr, "Initializing SDL renderer failed\n");
+		return -1;
 	}
-
-	SDL_WM_SetCaption(name, name);
-	screen = SDL_SetVideoMode(WIDTH, HEIGHT, BPP, SDLFlags);
 
 	if (TTF_Init() < 0) {
 		fprintf(stderr, "Initializing SDL TTF failed\n");
@@ -449,6 +445,7 @@ static int draw_picture(int highlight, int startfreq)
 	char text[1024];
 	struct scanresult *result;
 	SDL_Surface *surface;
+	SDL_Rect DestR;
 
 	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, BPP, RMASK, GMASK, BMASK, AMASK);
 	pixels = (Uint32 *) surface->pixels;
@@ -512,9 +509,19 @@ static int draw_picture(int highlight, int startfreq)
 		rnum++;
 	}
 
-	SDL_BlitSurface(surface, NULL, screen, NULL);
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 	SDL_FreeSurface(surface);
-	SDL_Flip(screen); 
+
+	DestR.x = 0;
+	DestR.y = 0;
+	DestR.w = WIDTH;
+	DestR.h = HEIGHT;
+
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, texture, NULL, &DestR);
+	SDL_DestroyTexture(texture);
+
+	SDL_RenderPresent(renderer);
 
 	return highlight_freq;
 }
@@ -526,7 +533,7 @@ static int draw_picture(int highlight, int startfreq)
 static void graphics_main(char *name, char *fontdir)
 {
 	SDL_Event event;
-	char *videodrv, videodrv_buf[256];
+	char *videodrv;
 	int quit = 0;
 	int highlight = 0;
 	int change = 1, scroll = 0;
@@ -539,11 +546,10 @@ static void graphics_main(char *name, char *fontdir)
 	}
 
 	/* don't hang forever with dummy video driver */
-	videodrv = SDL_VideoDriverName(videodrv_buf, sizeof(videodrv_buf));
-	if (!videodrv || strcmp(videodrv, "dummy") == 0)
+	videodrv = getenv("SDL_VIDEODRIVER");
+	if (videodrv && strcmp(videodrv, "dummy") == 0)
 		quit = 1;
 
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	while (!quit) {
 		if (change) {
 			highlight_freq = draw_picture(highlight, startfreq);
@@ -616,6 +622,12 @@ static void graphics_main(char *name, char *fontdir)
 				break;
 			}
 			break;
+		case SDL_WINDOWEVENT:
+			switch (event.window.event) {
+			case SDL_WINDOWEVENT_EXPOSED:
+				change = 1;
+				break;
+			}
 		}
 		if (accel) {
 			startfreq += accel;

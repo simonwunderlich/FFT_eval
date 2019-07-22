@@ -43,12 +43,12 @@ endif
 ifeq ($(CONFIG_fft_eval_sdl),y)
   # test for presence of SDL
   ifeq ($(origin SDL_CFLAGS) $(origin SDL_LDLIBS), undefined undefined)
-    SDL_CONFIG = sdl-config
-    ifeq ($(shell which $(SDL_CONFIG) 2>/dev/null),)
+    SDL2_CONFIG = sdl2-config
+    ifeq ($(shell which $(SDL2_CONFIG) 2>/dev/null),)
       $(error No SDL development libraries found!)
     endif
-    SDL_CFLAGS  += $(shell $(SDL_CONFIG) --cflags)
-    SDL_LDLIBS += $(shell $(SDL_CONFIG) --libs)
+    SDL_CFLAGS  += $(shell $(SDL2_CONFIG) --cflags)
+    SDL_LDLIBS += $(shell $(SDL2_CONFIG) --libs)
   endif
   CFLAGS_fft_eval_sdl.o += $(SDL_CFLAGS)
   LDLIBS_fft_eval_sdl += $(SDL_LDLIBS)
@@ -60,16 +60,16 @@ ifeq ($(CONFIG_fft_eval_sdl),y)
     endif
   endif
   
-  ifeq ($(origin LIBSDLTTF_CFLAGS) $(origin LIBSDLTTF_LDLIBS), undefined undefined)
-    LIBSDLTTF_NAME ?= SDL_ttf
-    ifeq ($(shell $(PKG_CONFIG) --modversion $(LIBSDLTTF_NAME) 2>/dev/null),)
-      $(error No $(LIBSDLTTF_NAME) development libraries found!)
+  ifeq ($(origin LIBSDL2TTF_CFLAGS) $(origin LIBSDL2TTF_LDLIBS), undefined undefined)
+    LIBSDL2TTF_NAME ?= SDL2_ttf
+    ifeq ($(shell $(PKG_CONFIG) --modversion $(LIBSDL2TTF_NAME) 2>/dev/null),)
+      $(error No $(LIBSDL2TTF_NAME) development libraries found!)
     endif
-    LIBSDLTTF_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(LIBSDLTTF_NAME))
-    LIBSDLTTF_LDLIBS +=  $(shell $(PKG_CONFIG) --libs $(LIBSDLTTF_NAME))
+    LIBSDL2TTF_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(LIBSDL2TTF_NAME))
+    LIBSDL2TTF_LDLIBS +=  $(shell $(PKG_CONFIG) --libs $(LIBSDL2TTF_NAME))
   endif
-  CFLAGS_fft_eval_sdl.o += $(LIBSDLTTF_CFLAGS)
-  LDLIBS_fft_eval_sdl += $(LIBSDLTTF_LDLIBS)
+  CFLAGS_fft_eval_sdl.o += $(LIBSDL2TTF_CFLAGS)
+  LDLIBS_fft_eval_sdl += $(LIBSDL2TTF_LDLIBS)
 endif
 
 CC ?= cc
