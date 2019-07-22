@@ -16,6 +16,7 @@ env:
    - CFLAGS="--coverage"
    - CFLAGS="-O3"
    - TESTRUN_WRAPPER='valgrind -q --error-exitcode=126 --track-origins=yes --leak-check=full' CFLAGS="-O1 -g3"
+   - CFLAGS="-g3 -fsanitize=undefined -fsanitize=address -fsanitize=leak"
 script:
  - make clean && make -j$(nproc) test
 
