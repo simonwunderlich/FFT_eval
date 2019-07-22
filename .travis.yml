@@ -45,3 +45,9 @@ matrix:
           - mxe-i686-w64-mingw32.static-sdl2-ttf
       script:
       - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
+    # osx native build
+    - os: osx
+      env:
+      - MAKE_FLAGS="CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y V=s"
+      script:
+      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
