@@ -47,7 +47,13 @@ matrix:
       - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
     # osx native build
     - os: osx
+      addons:
+        homebrew:
+          packages:
+          - sdl2
+          - sdl2_ttf
+          update: true
       env:
-      - MAKE_FLAGS="CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y V=s"
+      - MAKE_FLAGS="V=s"
       script:
       - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
