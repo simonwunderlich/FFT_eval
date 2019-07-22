@@ -54,7 +54,7 @@ out without actual hardware.
 
 To view the FFT results, use:
 
-./fft_eval /tmp/fft_results
+./fft_eval_sdl /tmp/fft_results
 
 Navigate through the currently selected datasets using the arrow keys (left
 and right). Scroll through the spectrum using the Page Up/Down keys.
