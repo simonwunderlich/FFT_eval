@@ -56,4 +56,4 @@ matrix:
       env:
       - MAKE_FLAGS="V=s"
       script:
-      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
+      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test
