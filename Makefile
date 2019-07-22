@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-# batctl build
+# fft_eval build
 BINARY_NAME = fft_eval
 OBJ = fft_eval.o
 
-# batctl flags and options
+# fft_eval flags and options
 CFLAGS += -Wall -W -std=gnu99 -fno-strict-aliasing -MD -MP
 CPPFLAGS += -D_GNU_SOURCE
 LDLIBS += -lm
