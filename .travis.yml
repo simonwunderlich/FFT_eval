@@ -18,11 +18,42 @@ env:
    - TESTRUN_WRAPPER='valgrind -q --error-exitcode=126 --track-origins=yes --leak-check=full' CFLAGS="-O1 -g3"
    - CFLAGS="-g3 -fsanitize=undefined -fsanitize=address -fsanitize=leak"
 script:
- - make clean && make -j$(nproc) test
+ - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} -j$(nproc) test
 
 matrix:
   include:
     # test without sdl installed
     - os: linux
+      env:
+      - MAKE_FLAGS="CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y V=s"
       script:
-      - make CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y clean && make CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y test
+      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test
+    # windows cross-compiler
+    - os: linux
+      env:
+      - MXE_CPU=i686
+      - PATH="/usr/lib/mxe/usr/bin/:$PATH"
+      - MAKE_FLAGS="CROSS=${MXE_CPU}-w64-mingw32.static- V=s"
+      addons:
+        apt:
+          sources:
+          - sourceline: 'deb http://pkg.mxe.cc/repos/apt/ xenial main'
+            key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC6BF758A33A3A276'
+          packages:
+          - mxe-i686-w64-mingw32.static-gcc
+          - mxe-i686-w64-mingw32.static-sdl2
+          - mxe-i686-w64-mingw32.static-sdl2-ttf
+      script:
+      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
+    # osx native build
+    - os: osx
+      addons:
+        homebrew:
+          packages:
+          - sdl2
+          - sdl2_ttf
+          update: true
+      env:
+      - MAKE_FLAGS="V=s"
+      script:
+      - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test

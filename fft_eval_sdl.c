@@ -26,19 +26,6 @@
  * based chipsets.
  */
 
-#ifdef __APPLE__
-  #include <libkern/OSByteOrder.h>
-  #define CONVERT_BE16(val)	val = OSSwapBigToHostInt16(val)
-  #define CONVERT_BE64(val)	val = OSSwapBigToHostInt64(val)
-#else
-  #ifdef	__FreeBSD__
-    #include <sys/endian.h>
-  #else
-    #include <endian.h>
-  #endif	/* __FreeBSD__ */
-  #define CONVERT_BE16(val)	val = be16toh(val)
-  #define CONVERT_BE64(val)	val = be64toh(val)
-#endif
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
