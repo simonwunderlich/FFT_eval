@@ -9,7 +9,7 @@ This program has been created to aid open source spectrum
 analyzer development for Qualcomm/Atheros AR92xx and AR93xx
 based chipsets. 
 
-It visualizes the FFT data reported by the chips to help intepreting
+It visualizes the FFT data reported by the chips to help interpreting
 and understanding the data.
 
 TODO: The interpreted data format is unknown! Please help
