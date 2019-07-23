@@ -19,7 +19,7 @@ data format from Qualcomm Atheros!
 BUILD
 =====
 
-You need to have SDL and SDL_ttf development packages installed
+You need to have SDL2 and SDL2_ttf development packages installed
 on your system, as well as make and gcc.
 
 Just type make to build the program:
@@ -28,7 +28,7 @@ Just type make to build the program:
 
   $ make
   gcc -O2 -Wall -pedantic -c -o fft_eval.o fft_eval.c
-  gcc -lSDL -lSDL_ttf -o fft_eval fft_eval.o
+  gcc -lSDL2 -lSDL2_ttf -o fft_eval fft_eval.o
   $
 
 USAGE
