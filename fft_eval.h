@@ -20,6 +20,7 @@ enum ath_fft_sample_type {
         ATH_FFT_SAMPLE_HT20 = 1,
         ATH_FFT_SAMPLE_HT20_40 = 2,
 	ATH_FFT_SAMPLE_ATH10K = 3,
+	ATH_FFT_SAMPLE_ATH11K = 4,
 };
 
 enum nl80211_channel_type {
@@ -116,6 +117,27 @@ struct fft_sample_ath10k {
 	u8 data[0];
 } __attribute__((packed));
 
+/*
+ * ath11k spectral sample definition
+ */
+
+#define SPECTRAL_ATH11K_MAX_NUM_BINS            256
+
+struct fft_sample_ath11k {
+	struct fft_sample_tlv tlv;
+	u8 chan_width_mhz;
+	s8 max_index;
+	u8 max_exp;
+	uint16_t freq1;
+	uint16_t freq2;
+	uint16_t max_magnitude;
+	uint16_t rssi;
+	uint32_t tsf;
+	int32_t noise;
+
+	u8 data[0];
+} __attribute__((packed));
+
 #if defined(__WIN32__)
 #pragma pack(pop)
 #endif
@@ -130,6 +152,10 @@ struct scanresult {
 			struct fft_sample_ath10k header;
 			u8 data[SPECTRAL_ATH10K_MAX_NUM_BINS];
 		} ath10k;
+		struct {
+			struct fft_sample_ath11k header;
+			u8 data[SPECTRAL_ATH11K_MAX_NUM_BINS];
+		} ath11k;
 	} sample;
 	struct scanresult *next;
 };

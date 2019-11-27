@@ -31,6 +31,7 @@
 #if defined(__APPLE__)
   #include <libkern/OSByteOrder.h>
   #define CONVERT_BE16(val)	val = OSSwapBigToHostInt16(val)
+  #define CONVERT_BE32(val)	val = OSSwapBigToHostInt32(val)
   #define CONVERT_BE64(val)	val = OSSwapBigToHostInt64(val)
 #elif defined(_WIN32)
   #define __USE_MINGW_ANSI_STDIO 1
@@ -50,6 +51,7 @@
     #include <endian.h>
   #endif	/* __FreeBSD__ */
   #define CONVERT_BE16(val)	val = be16toh(val)
+  #define CONVERT_BE32(val)	val = be32toh(val)
   #define CONVERT_BE64(val)	val = be64toh(val)
 #endif
 #include <errno.h>
@@ -212,6 +214,32 @@ int fft_eval_init(char *fname)
 
 			handled = 1;
 			break;
+		case ATH_FFT_SAMPLE_ATH11K:
+			if (sample_len < sizeof(result->sample.ath11k.header)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
+					sample_len, sizeof(result->sample.ath11k.header));
+				break;
+			}
+
+			bins = sample_len - sizeof(result->sample.ath11k.header);
+
+			if (bins != 32 &&
+			    bins != 64 &&
+			    bins != 128 &&
+			    bins != 256) {
+				fprintf(stderr, "invalid bin length %d\n", bins);
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ath11k.header.freq1);
+			CONVERT_BE16(result->sample.ath11k.header.freq2);
+			CONVERT_BE16(result->sample.ath11k.header.max_magnitude);
+			CONVERT_BE16(result->sample.ath11k.header.rssi);
+			CONVERT_BE32(result->sample.ath11k.header.tsf);
+			CONVERT_BE32(result->sample.ath11k.header.noise);
+
+			handled = 1;
+			break;
 		default:
 			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
 			break;
@@ -279,4 +307,15 @@ void fft_eval_usage(const char *prog)
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
 	fprintf(stderr, "\n");
+	fprintf(stderr, "For ath11k based cards, use:\n");
+	fprintf(stderr, "ip link set dev wlan0 up\n");
+	fprintf(stderr, "echo background > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
+	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
+	fprintf(stderr, "iw dev wlan0 scan\n");
+	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
+	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
+	fprintf(stderr, "\n");
+
 }

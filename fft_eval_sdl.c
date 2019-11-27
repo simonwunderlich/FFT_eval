@@ -416,6 +416,55 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 	return 0;
 }
 
+static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
+			      float startfreq, int highlight)
+{
+	int datamax = 0, datamin = 65536;
+	int datasquaresum = 0;
+	int i, bins;
+
+	bins = result->sample.tlv.length -
+	       (sizeof(result->sample.ath11k.header) -
+		sizeof(result->sample.ath11k.header.tlv));
+
+	for (i = 0; i < bins; i++) {
+		int data;
+
+		data = (result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp);
+		data *= data;
+		datasquaresum += data;
+		if (data > datamax) datamax = data;
+		if (data < datamin) datamin = data;
+	}
+
+	if (highlight) {
+		/* prints some statistical data about the currently selected
+		 * data sample and auxiliary data. */
+		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %04d, noise %04d, max_magnitude %04d max_index %03d max_exp %03d tsf %08d | ",
+		       result->sample.ath11k.header.freq1, result->sample.ath11k.header.freq1,
+		       result->sample.ath11k.header.chan_width_mhz,
+		       bins, result->sample.ath11k.header.rssi,
+		       result->sample.ath11k.header.noise, result->sample.ath11k.header.max_magnitude,
+		       result->sample.ath11k.header.max_index, result->sample.ath11k.header.max_exp,
+		       result->sample.ath11k.header.tsf);
+		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+	}
+
+	for (i = 0; i < bins; i++) {
+		float freq;
+		int data;
+		freq = result->sample.ath11k.header.freq1 -
+				(result->sample.ath11k.header.chan_width_mhz ) / 2 +
+				(result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
+
+		data = result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp;
+		plot_datapoint(pixels, freq, startfreq, result->sample.ath11k.header.noise,
+			       result->sample.ath11k.header.rssi, data, datasquaresum,
+			       highlight);
+	}
+
+	return 0;
+}
 
 /*
  * draw_picture - draws the current screen.
@@ -491,6 +540,12 @@ static int draw_picture(int highlight, int startfreq)
 
 			draw_sample_ath10k(pixels, result, startfreq, rnum == highlight);
 			/* TODO */
+			break;
+		case ATH_FFT_SAMPLE_ATH11K:
+			if (rnum == highlight)
+				highlight_freq = result->sample.ath11k.header.freq1;
+
+			draw_sample_ath11k(pixels, result, startfreq, rnum == highlight);
 			break;
 		}
 		rnum++;

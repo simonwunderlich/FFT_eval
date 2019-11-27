@@ -59,6 +59,17 @@ For ath10k/AR98xx based cards, use:
   echo disable > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl
   cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > samples
 
+For ath11k based cards, use:
+
+.. code-block:: bash
+
+  ip link set dev wlan0 up
+  echo background > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl
+  echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl
+  iw dev wlan0 scan
+  echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl
+  cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples
+
 There are some recorded samples in the "samples" directory to try it
 out without actual hardware.
 

@@ -207,7 +207,45 @@ static int print_values(void)
 
 			}
 			break;
+		case ATH_FFT_SAMPLE_ATH11K:
+			{
+				int datamax = 0, datamin = 65536;
+				int datasquaresum = 0;
+				int i, bins;
+				printf("\n{ \"tsf\": %08d, \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
+				       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
+				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
+
+				for (i = 0; i < bins; i++) {
+					int data;
+
+					data = result->sample.ath11k.data[i];
+					data *= data;
+					datasquaresum += data;
+					if (data > datamax)
+						datamax = data;
+					if (data < datamin)
+						datamin = data;
+				}
+
+				for (i = 0; i < bins; i++) {
+					float freq;
+					int data;
+					float signal;
+					freq = result->sample.ath11k.header.freq1 - (result->sample.ath11k.header.chan_width_mhz) / 2 + (result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
+
+					data = result->sample.ath11k.data[i];
+					if (data == 0)
+						data = 1;
+					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					printf("[ %f, %f ]", freq, signal);
+					if (i < bins - 1)
+						printf(", ");
+
+				}
+			}
+			break;
 		}
 
 		printf(" ] }");
