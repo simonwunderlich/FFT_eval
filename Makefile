@@ -1,5 +1,12 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
+# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-FileCopyrightText: 2008-2019, Sven Eckelmann <sven@narfation.org>
+# SPDX-FileCopyrightText: 2012-2014, Simon Wunderlich <sw@simonwunderlich.de>
+# SPDX-FileCopyrightText: 2013, Janusz Dziedzic <janusz.dziedzic@tieto.com>
+# SPDX-FileCopyrightText: 2015, Adrian Chadd <adrian@freebsd.org>
+# SPDX-FileCopyrightText: 2015, Steven Pease <spease@suitabletech.com>
+# SPDX-FileCopyrightText: 2017, Nicolas Pace <nicopace@gmail.com>
 
 # add a new binary and allow to disable/enable it using the CONFIG_$binaryname
 # make parameter

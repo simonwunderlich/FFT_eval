@@ -1,23 +1,8 @@
-/* 
- * Copyright (C) 2012 Simon Wunderlich <sw@simonwunderlich.de>
- * Copyright (C) 2012 Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
- * Copyright (C) 2013 Gui Iribarren <gui@altermundi.net>
- * Copyright (C) 2017 Nico Pace <nicopace@altermundi.net>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of version 2 of the GNU General Public
- * License as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA
- * 
+/* SPDX-License-Identifier: GPL-2.0-only
+ * SPDX-FileCopyrightText: 2012 Simon Wunderlich <sw@simonwunderlich.de>
+ * SPDX-FileCopyrightText: 2012 Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
+ * SPDX-FileCopyrightText: 2013 Gui Iribarren <gui@altermundi.net>
+ * SPDX-FileCopyrightText: 2017 Nico Pace <nicopace@altermundi.net>
  */
 
 /*
