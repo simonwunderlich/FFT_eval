@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2017-2019, Sven Eckelmann <sven@narfation.org>
+
 sudo: false
 dist: xenial
 language: c
@@ -57,3 +60,15 @@ matrix:
       - MAKE_FLAGS="V=s"
       script:
       - make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test
+    # reuse test
+    - os: linux
+      language: minimal
+      services:
+      - docker
+      env:
+      - REUSE_TEST=1
+      before_install:
+      - docker pull fsfe/reuse:latest
+      - docker run --name reuse -v ${TRAVIS_BUILD_DIR}:/repo fsfe/reuse /bin/sh -c "cd /repo; reuse lint"
+      script:
+      - true

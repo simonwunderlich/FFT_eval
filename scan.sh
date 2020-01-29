@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+# SPDX-FileCopyrightText: 2013, Janusz Dziedzic <janusz.dziedzic@tieto.com>
 
 # configure wlanX
 ATH9K_IFACE=wlan0

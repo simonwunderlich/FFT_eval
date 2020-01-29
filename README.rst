@@ -1,3 +1,9 @@
+.. SPDX-License-Identifier: CC0-1.0
+.. SPDX-FileCopyrightText: 2012-2016, Simon Wunderlich <sw@simonwunderlich.de>
+.. SPDX-FileCopyrightText: 2017, Nico Pace <nicopace@altermundi.net>
+.. SPDX-FileCopyrightText: 2019, Sven Eckelmann <sven@narfation.org>
+.. SPDX-FileCopyrightText: 2019, John Crispin <john@phrozen.org>
+
 ==============
 FFT evaluation
 ==============

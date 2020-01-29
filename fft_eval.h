@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: GPL-2.0
-/* Copyright (C) 2012 Simon Wunderlich <sw@simonwunderlich.de>
- * Copyright (C) 2012 Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
- * Copyright (C) 2013 Gui Iribarren <gui@altermundi.net>
- * Copyright (C) 2017 Nico Pace <nicopace@altermundi.net>
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-FileCopyrightText: 2012 Simon Wunderlich <sw@simonwunderlich.de>
+ * SPDX-FileCopyrightText: 2012 Fraunhofer-Gesellschaft zur Foerderung der angewandten Forschung e.V.
+ * SPDX-FileCopyrightText: 2013 Gui Iribarren <gui@altermundi.net>
+ * SPDX-FileCopyrightText: 2017 Nico Pace <nicopace@altermundi.net>
  */
 
 #ifndef _FFT_EVAL_H
