@@ -37,9 +37,11 @@
   #define __USE_MINGW_ANSI_STDIO 1
   #if __BYTE_ORDER == __LITTLE_ENDIAN
     #define CONVERT_BE16(val)	val = _byteswap_ushort(val)
+    #define CONVERT_BE32(val)	val = _byteswap_ulong(val)
     #define CONVERT_BE64(val)	val = _byteswap_uint64(val)
   #elif __BYTE_ORDER == __BIG_ENDIAN
     #define CONVERT_BE16(val)
+    #define CONVERT_BE32(val)
     #define CONVERT_BE64(val)
   #else
     #error Endianess undefined
