@@ -1,12 +1,5 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-# SPDX-License-Identifier: GPL-2.0-only
-# SPDX-FileCopyrightText: 2008-2019, Sven Eckelmann <sven@narfation.org>
-# SPDX-FileCopyrightText: 2012-2014, Simon Wunderlich <sw@simonwunderlich.de>
-# SPDX-FileCopyrightText: 2013, Janusz Dziedzic <janusz.dziedzic@tieto.com>
-# SPDX-FileCopyrightText: 2015, Adrian Chadd <adrian@freebsd.org>
-# SPDX-FileCopyrightText: 2015, Steven Pease <spease@suitabletech.com>
-# SPDX-FileCopyrightText: 2017, Nicolas Pace <nicopace@gmail.com>
 
 # add a new binary and allow to disable/enable it using the CONFIG_$binaryname
 # make parameter
@@ -31,6 +24,14 @@ fft_eval_sdl-y += fft_eval_sdl.o
 $(eval $(call add_command,fft_eval_json,y))
 fft_eval_json-y += fft_eval.o
 fft_eval_json-y += fft_eval_json.o
+
+$(eval $(call add_command,fft_eval_rx_power,y))
+fft_eval_rx_power-y += fft_eval.o
+fft_eval_rx_power-y += fft_eval_rx_power.o
+
+$(eval $(call add_command,fft_eval_rtl_power_fftw,y))
+fft_eval_rtl_power_fftw-y += fft_eval.o
+fft_eval_rtl_power_fftw-y += fft_eval_rtl_power_fftw.o
 
 # fft_eval flags and options
 CFLAGS += -Wall -W -std=gnu99 -fno-strict-aliasing -MD -MP
@@ -124,6 +125,26 @@ test:: fft_eval_json
 		echo $$i; \
 		$(TESTRUN_WRAPPER) ./fft_eval_json $$i > $$i.test; \
 		cmp $$i.test $$i.json; \
+	done
+endif
+
+ifeq ($(CONFIG_fft_eval_rx_power),y)
+test:: fft_eval_rx_power
+	set -e; \
+	for i in $(wildcard samples/*.dump); do \
+		echo $$i; \
+		$(TESTRUN_WRAPPER) ./fft_eval_rx_power $$i > $$i.test; \
+		cmp $$i.test $$i.csv; \
+	done
+endif
+
+ifeq ($(CONFIG_fft_eval_rtl_power_fftw),y)
+test:: fft_eval_rtl_power_fftw
+	set -e; \
+	for i in $(wildcard samples/*.dump); do \
+		echo $$i; \
+		$(TESTRUN_WRAPPER) ./fft_eval_rtl_power_fftw $$i > $$i.test; \
+		cmp $$i.test $$i.fftw; \
 	done
 endif
 
