@@ -92,7 +92,7 @@ and right). Scroll through the spectrum using the Page Up/Down keys.
 LICENSE
 =======
 
-Read the GPL v2 file 'COPYING'.
+Read the GPL v2 file 'LICENSES/GPL-2.0-only.txt'.
 
 AUTHOR
 ======
