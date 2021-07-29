@@ -479,7 +479,7 @@ static int draw_picture(int highlight, int startfreq)
 		}
 
 	/* vertical lines (frequency) */
-	for (i = 2300; i < 6000; i += 10) {
+	for (i = 2300; i < 7200; i += 10) {
 		x = (X_SCALE * (i - startfreq));
 
 		if (x < 0 || x > WIDTH)
@@ -663,7 +663,7 @@ static void graphics_main(char *name, char *fontdir)
 			change = 1;
 		}
 		if (startfreq < 2300)		startfreq = 2300;
-		if (startfreq > 6000)		startfreq = 6000;
+		if (startfreq > 7200)		startfreq = 7200;
 		if (accel < -20)		accel = -20;
 		if (accel >  20)		accel = 20;
 	}
