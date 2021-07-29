@@ -407,6 +407,8 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 	int datamax = 0, datamin = 65536;
 	int datasquaresum = 0;
 	int i, bins;
+	u16 frequency;
+	u8 width;
 
 	bins = result->sample.tlv.length -
 	       (sizeof(result->sample.ath11k.header) -
@@ -435,12 +437,24 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
 	}
 
+	/* If freq2 is non zero and not equal to freq1 then the scan results are fragmented */
+	if (result->sample.ath11k.header.freq2 &&
+	    result->sample.ath11k.header.freq1 != result->sample.ath11k.header.freq2) {
+		width = result->sample.ath11k.header.chan_width_mhz / 2;
+		if (result->sample.ath11k.header.is_primary)
+			frequency = result->sample.ath11k.header.freq1;
+		else
+			frequency = result->sample.ath11k.header.freq2;
+	}  else {
+		frequency = result->sample.ath11k.header.freq1;
+		width = result->sample.ath11k.header.chan_width_mhz;
+	}
+
 	for (i = 0; i < bins; i++) {
 		float freq;
 		int data;
-		freq = result->sample.ath11k.header.freq1 -
-				(result->sample.ath11k.header.chan_width_mhz ) / 2 +
-				(result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
+
+		freq = frequency - width / 2 + (width * (i + 0.5) / bins);
 
 		data = result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp;
 		plot_datapoint(pixels, freq, startfreq, result->sample.ath11k.header.noise,

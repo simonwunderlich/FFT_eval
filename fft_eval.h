@@ -9,6 +9,7 @@
 #define _FFT_EVAL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 
 typedef int8_t s8;
@@ -128,6 +129,7 @@ struct fft_sample_ath11k {
 	u8 chan_width_mhz;
 	s8 max_index;
 	u8 max_exp;
+	bool is_primary;
 	uint16_t freq1;
 	uint16_t freq2;
 	uint16_t max_magnitude;
