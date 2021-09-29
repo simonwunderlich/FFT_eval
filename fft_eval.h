@@ -121,7 +121,7 @@ struct fft_sample_ath10k {
  * ath11k spectral sample definition
  */
 
-#define SPECTRAL_ATH11K_MAX_NUM_BINS            256
+#define SPECTRAL_ATH11K_MAX_NUM_BINS            512
 
 struct fft_sample_ath11k {
 	struct fft_sample_tlv tlv;

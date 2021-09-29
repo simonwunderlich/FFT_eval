@@ -210,10 +210,12 @@ int fft_eval_init(char *fname)
 
 			bins = sample_len - sizeof(result->sample.ath11k.header);
 
-			if (bins != 32 &&
+			if (bins != 16 &&
+			    bins != 32 &&
 			    bins != 64 &&
 			    bins != 128 &&
-			    bins != 256) {
+			    bins != 256 &&
+			    bins != 512) {
 				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
