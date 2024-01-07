@@ -191,6 +191,13 @@ int fft_eval_init(char *fname)
 				break;
 			}
 
+			/*
+			 * Zero noise level should not happen in a real environment
+			 * but some datasets contain it which creates bogus results.
+			 */
+			if (result->sample.ath10k.header.noise == 0)
+				break;
+
 			CONVERT_BE16(result->sample.ath10k.header.freq1);
 			CONVERT_BE16(result->sample.ath10k.header.freq2);
 			CONVERT_BE16(result->sample.ath10k.header.noise);
@@ -219,6 +226,13 @@ int fft_eval_init(char *fname)
 				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
+
+			/*
+			 * Zero noise level should not happen in a real environment
+			 * but some datasets contain it which creates bogus results.
+			 */
+			if (result->sample.ath11k.header.noise == 0)
+				break;
 
 			CONVERT_BE16(result->sample.ath11k.header.freq1);
 			CONVERT_BE16(result->sample.ath11k.header.freq2);
