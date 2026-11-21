@@ -100,6 +100,26 @@ static char *read_file(char *fname, size_t *size)
 }
 
 /*
+ * is_zero - checks whether all FFT bins are zero
+ *
+ * @data: FFT bins
+ * @len: number of FFT bins
+ *
+ * returns 1 when no bin contains a value, 0 otherwise.
+ */
+static int is_zero(const u8 *data, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (data[i] != 0)
+			return 0;
+	}
+
+	return 1;
+}
+
+/*
  * read_scandata - reads the fft scandata and compiles a linked list of datasets
  *
  * @fname: file name
@@ -162,6 +182,14 @@ int fft_eval_init(char *fname)
 				break;
 			}
 
+			/*
+			 * The signal strength of a bin is calculated relative to
+			 * the sum of all bins. This is not possible when there
+			 * is no data at all.
+			 */
+			if (is_zero(result->sample.ht20.data, SPECTRAL_HT20_NUM_BINS))
+				break;
+
 			CONVERT_BE16(result->sample.ht20.freq);
 			CONVERT_BE16(result->sample.ht20.max_magnitude);
 			CONVERT_BE64(result->sample.ht20.tsf);
@@ -185,6 +213,13 @@ int fft_eval_init(char *fname)
 					result->sample.ht40.channel_type);
 				break;
 			}
+
+			/* lower and upper half are evaluated independently */
+			if (is_zero(result->sample.ht40.data,
+				    SPECTRAL_HT20_40_NUM_BINS / 2) ||
+			    is_zero(result->sample.ht40.data + SPECTRAL_HT20_40_NUM_BINS / 2,
+				    SPECTRAL_HT20_40_NUM_BINS / 2))
+				break;
 
 			CONVERT_BE16(result->sample.ht40.freq);
 			CONVERT_BE64(result->sample.ht40.tsf);
@@ -214,6 +249,9 @@ int fft_eval_init(char *fname)
 			 * but some datasets contain it which creates bogus results.
 			 */
 			if (result->sample.ath10k.header.noise == 0)
+				break;
+
+			if (is_zero(result->sample.ath10k.data, bins))
 				break;
 
 			CONVERT_BE16(result->sample.ath10k.header.freq1);
@@ -250,6 +288,9 @@ int fft_eval_init(char *fname)
 			 * but some datasets contain it which creates bogus results.
 			 */
 			if (result->sample.ath11k.header.noise == 0)
+				break;
+
+			if (is_zero(result->sample.ath11k.data, bins))
 				break;
 
 			CONVERT_BE16(result->sample.ath11k.header.freq1);
