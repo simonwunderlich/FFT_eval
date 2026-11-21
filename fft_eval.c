@@ -395,7 +395,8 @@ void fft_eval_usage(const char *prog)
 	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
 	fprintf(stderr, "iw dev wlan0 scan\n");
 	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > samples\n");
+	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > /tmp/fft_results\n");
+	fprintf(stderr, "%s /tmp/fft_results\n", prog);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
 	fprintf(stderr, "\n");
@@ -405,7 +406,8 @@ void fft_eval_usage(const char *prog)
 	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
 	fprintf(stderr, "iw dev wlan0 scan\n");
 	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples\n");
+	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > /tmp/fft_results\n");
+	fprintf(stderr, "%s /tmp/fft_results\n", prog);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
 	fprintf(stderr, "\n");
