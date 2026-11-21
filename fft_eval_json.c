@@ -205,7 +205,7 @@ static int print_values(void)
 				for (i = 0; i < bins; i++) {
 					uint64_t data;
 
-					data = result->sample.ath11k.data[i];
+					data = (result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp);
 					data *= data;
 					datasquaresum += data;
 					if (data > datamax)
@@ -220,7 +220,7 @@ static int print_values(void)
 					float signal;
 					freq = result->sample.ath11k.header.freq1 - (result->sample.ath11k.header.chan_width_mhz) / 2 + (result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
 
-					data = result->sample.ath11k.data[i];
+					data = result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp;
 					if (data == 0)
 						data = 1;
 					signal = (float)result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
