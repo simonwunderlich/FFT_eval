@@ -120,6 +120,23 @@ static int is_zero(const u8 *data, size_t len)
 }
 
 /*
+ * is_valid_max_exp - checks whether the bins can be scaled by the exponent
+ *
+ * @max_exp: exponent of the sample
+ *
+ * returns 1 when the exponent can be used, 0 otherwise.
+ */
+static int is_valid_max_exp(u8 max_exp)
+{
+	if (max_exp > SPECTRAL_MAX_EXP) {
+		fprintf(stderr, "invalid max_exp %d\n", max_exp);
+		return 0;
+	}
+
+	return 1;
+}
+
+/*
  * read_scandata - reads the fft scandata and compiles a linked list of datasets
  *
  * @fname: file name
@@ -190,6 +207,9 @@ int fft_eval_init(char *fname)
 			if (is_zero(result->sample.ht20.data, SPECTRAL_HT20_NUM_BINS))
 				break;
 
+			if (!is_valid_max_exp(result->sample.ht20.max_exp))
+				break;
+
 			CONVERT_BE16(result->sample.ht20.freq);
 			CONVERT_BE16(result->sample.ht20.max_magnitude);
 			CONVERT_BE64(result->sample.ht20.tsf);
@@ -219,6 +239,9 @@ int fft_eval_init(char *fname)
 				    SPECTRAL_HT20_40_NUM_BINS / 2) ||
 			    is_zero(result->sample.ht40.data + SPECTRAL_HT20_40_NUM_BINS / 2,
 				    SPECTRAL_HT20_40_NUM_BINS / 2))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ht40.max_exp))
 				break;
 
 			CONVERT_BE16(result->sample.ht40.freq);
@@ -252,6 +275,9 @@ int fft_eval_init(char *fname)
 				break;
 
 			if (is_zero(result->sample.ath10k.data, bins))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ath10k.header.max_exp))
 				break;
 
 			CONVERT_BE16(result->sample.ath10k.header.freq1);
@@ -291,6 +317,9 @@ int fft_eval_init(char *fname)
 				break;
 
 			if (is_zero(result->sample.ath11k.data, bins))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ath11k.header.max_exp))
 				break;
 
 			CONVERT_BE16(result->sample.ath11k.header.freq1);

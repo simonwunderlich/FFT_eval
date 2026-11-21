@@ -34,15 +34,15 @@ static int print_values(void)
 
 		case ATH_FFT_SAMPLE_HT20:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
+				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datasquaresum = 0;
 
 				/* prints some statistical data about the
 				 * data sample and auxiliary data. */
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht20.tsf, result->sample.ht20.freq, result->sample.ht20.rssi,
 				       result->sample.ht20.noise);
 				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-					int data;
+					uint64_t data;
 					data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
 					data *= data;
 					datasquaresum += data;
@@ -73,10 +73,10 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum_lower = 0;
-				int datasquaresum_upper = 0;
-				int datasquaresum;
+				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datasquaresum_lower = 0;
+				uint64_t datasquaresum_upper = 0;
+				uint64_t datasquaresum;
 				int i;
 				int centerfreq;
 				s8 noise;
@@ -86,7 +86,7 @@ static int print_values(void)
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht40.tsf, result->sample.ht40.freq, result->sample.ht40.lower_rssi,
 				       result->sample.ht40.lower_noise);
 				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
-					int data;
+					uint64_t data;
 
 					data = result->sample.ht40.data[i];
 					data <<= result->sample.ht40.max_exp;
@@ -100,7 +100,7 @@ static int print_values(void)
 				}
 
 				for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
-					int data;
+					uint64_t data;
 
 					data = result->sample.ht40.data[i];
 					data <<= result->sample.ht40.max_exp;
@@ -154,8 +154,8 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_ATH10K:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
+				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datasquaresum = 0;
 				int i, bins;
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
 				       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
@@ -163,7 +163,7 @@ static int print_values(void)
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
 
 				for (i = 0; i < bins; i++) {
-					int data;
+					uint64_t data;
 
 					data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
 					data *= data;
@@ -194,8 +194,8 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
+				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datasquaresum = 0;
 				int i, bins;
 				printf("\n{ \"tsf\": %08d, \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
 				       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
@@ -203,7 +203,7 @@ static int print_values(void)
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
 
 				for (i = 0; i < bins; i++) {
-					int data;
+					uint64_t data;
 
 					data = result->sample.ath11k.data[i];
 					data *= data;

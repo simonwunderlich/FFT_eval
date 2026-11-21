@@ -170,7 +170,8 @@ static int render_text(SDL_Surface *surface, char *text, int x, int y)
 
 
 static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
-			  int noise, int rssi, int data, int datasquaresum,
+			  int noise, int rssi, int data,
+			  uint64_t datasquaresum,
 			  int highlight)
 {
 	Uint32 color, opacity;
@@ -204,12 +205,12 @@ static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
 static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 			    float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum = 0;
+	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datasquaresum = 0;
 	int i;
 
 	for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-		int data;
+		uint64_t data;
 
 		data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
 		data *= data;
@@ -225,7 +226,7 @@ static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 			result->sample.ht20.freq, result->sample.ht20.rssi, result->sample.ht20.noise,
 			result->sample.ht20.max_magnitude, result->sample.ht20.max_index, result->sample.ht20.bitmap_weight,
 			result->sample.ht20.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum = %"PRIu64"\n", datamax, datamin, datasquaresum);
 	}
 
 	for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
@@ -260,17 +261,17 @@ static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 			       float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum_lower = 0;
-	int datasquaresum_upper = 0;
-	int datasquaresum;
+	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datasquaresum_lower = 0;
+	uint64_t datasquaresum_upper = 0;
+	uint64_t datasquaresum;
 	int i;
 	int centerfreq;
 	s8 noise;
 	s8 rssi;
 
 	for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
-		int data;
+		uint64_t data;
 
 		data = result->sample.ht40.data[i];
 		data <<= result->sample.ht40.max_exp;
@@ -282,7 +283,7 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 	}
 
 	for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
-		int data;
+		uint64_t data;
 
 		data = result->sample.ht40.data[i];
 		data <<= result->sample.ht40.max_exp;
@@ -318,9 +319,9 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 		       result->sample.ht40.lower_bitmap_weight,
 		       result->sample.ht40.upper_bitmap_weight,
 		       result->sample.ht40.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum_lower = %d\n",
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum_lower = %"PRIu64"\n",
 		       datamax, datamin, datasquaresum_lower);
-		printf("datamax = %d, datamin = %d, datasquaresum_upper = %d\n",
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum_upper = %"PRIu64"\n",
 		       datamax, datamin, datasquaresum_upper);
 	}
 
@@ -354,8 +355,8 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 			      float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum = 0;
+	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datasquaresum = 0;
 	int i, bins;
 
 	bins = result->sample.tlv.length -
@@ -364,7 +365,7 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 
 
 	for (i = 0; i < bins; i++) {
-		int data;
+		uint64_t data;
 
 		data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
 		data *= data;
@@ -382,7 +383,7 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 		       bins, result->sample.ath10k.header.rssi,
 		       result->sample.ath10k.header.noise, result->sample.ath10k.header.max_magnitude,
 		       result->sample.ath10k.header.max_index, result->sample.ath10k.header.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum = %"PRIu64"\n", datamax, datamin, datasquaresum);
 	}
 
 	for (i = 0; i < bins; i++) {
@@ -404,8 +405,8 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 			      float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum = 0;
+	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datasquaresum = 0;
 	int i, bins;
 
 	bins = result->sample.tlv.length -
@@ -413,7 +414,7 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 		sizeof(result->sample.ath11k.header.tlv));
 
 	for (i = 0; i < bins; i++) {
-		int data;
+		uint64_t data;
 
 		data = (result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp);
 		data *= data;
@@ -432,7 +433,7 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 		       result->sample.ath11k.header.noise, result->sample.ath11k.header.max_magnitude,
 		       result->sample.ath11k.header.max_index, result->sample.ath11k.header.max_exp,
 		       result->sample.ath11k.header.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum = %"PRIu64"\n", datamax, datamin, datasquaresum);
 	}
 
 	for (i = 0; i < bins; i++) {
