@@ -175,6 +175,17 @@ int fft_eval_init(char *fname)
 				break;
 			}
 
+			/*
+			 * The position of the secondary channel is required to
+			 * calculate the center frequency of the sample.
+			 */
+			if (result->sample.ht40.channel_type != NL80211_CHAN_HT40PLUS &&
+			    result->sample.ht40.channel_type != NL80211_CHAN_HT40MINUS) {
+				fprintf(stderr, "invalid channel type %d\n",
+					result->sample.ht40.channel_type);
+				break;
+			}
+
 			CONVERT_BE16(result->sample.ht40.freq);
 			CONVERT_BE64(result->sample.ht40.tsf);
 			CONVERT_BE16(result->sample.ht40.lower_max_magnitude);
