@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
 	if (argc >= 1)
 		prog = argv[0];
 
-	while ((ch = getopt(argc, argv, "f:")) != -1) {
+	while ((ch = getopt(argc, argv, "f:h")) != -1) {
 		switch (ch) {
 		case 'f':
 			if (fontdir)
