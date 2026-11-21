@@ -34,7 +34,7 @@ static int print_values(void)
 
 		case ATH_FFT_SAMPLE_HT20:
 			{
-				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
 				uint64_t datasquaresum = 0;
 
 				/* prints some statistical data about the
@@ -73,7 +73,7 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			{
-				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
 				uint64_t datasquaresum_lower = 0;
 				uint64_t datasquaresum_upper = 0;
 				uint64_t datasquaresum;
@@ -154,7 +154,7 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_ATH10K:
 			{
-				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
 				uint64_t datasquaresum = 0;
 				int i, bins;
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
@@ -194,7 +194,7 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			{
-				uint64_t datamax = 0, datamin = 65536;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
 				uint64_t datasquaresum = 0;
 				int i, bins;
 				printf("\n{ \"tsf\": %" PRIu32 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,

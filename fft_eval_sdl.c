@@ -212,7 +212,7 @@ static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
 static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 			    float startfreq, int highlight)
 {
-	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
 	uint64_t datasquaresum = 0;
 	int i;
 
@@ -268,7 +268,7 @@ static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 			       float startfreq, int highlight)
 {
-	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
 	uint64_t datasquaresum_lower = 0;
 	uint64_t datasquaresum_upper = 0;
 	uint64_t datasquaresum;
@@ -362,7 +362,7 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 			      float startfreq, int highlight)
 {
-	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
 	uint64_t datasquaresum = 0;
 	int i, bins;
 
@@ -412,7 +412,7 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 			      float startfreq, int highlight)
 {
-	uint64_t datamax = 0, datamin = 65536;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
 	uint64_t datasquaresum = 0;
 	int i, bins;
 
