@@ -171,12 +171,13 @@ int fft_eval_init(char *fname)
 		tlv = (struct fft_sample_tlv *) pos;
 		CONVERT_BE16(tlv->length);
 		sample_len = sizeof(*tlv) + tlv->length;
-		pos += sample_len;
 
 		if (remaining_len < sample_len) {
 			fprintf(stderr, "Found incomplete TLV at position 0x%zx\n", rel_pos);
 			break;
 		}
+
+		pos += sample_len;
 
 		if (sample_len > sizeof(result->sample)) {
 			fprintf(stderr, "sample length %zu too long\n", sample_len);
