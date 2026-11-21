@@ -556,8 +556,9 @@ static int draw_picture(int highlight, int startfreq)
 /*
  * graphics_main - sets up the data and holds the mainloop.
  *
+ * returns 0 on success, -1 on error.
  */
-static void graphics_main(char *name, char *fontdir)
+static int graphics_main(char *name, char *fontdir)
 {
 	SDL_Event event;
 	char *videodrv;
@@ -569,7 +570,8 @@ static void graphics_main(char *name, char *fontdir)
 
 	if (graphics_init_sdl(name, fontdir) < 0) {
 		fprintf(stderr, "Failed to initialize graphics.\n");
-		return;
+		graphics_quit_sdl();
+		return -1;
 	}
 
 	/* don't hang forever with dummy video driver */
@@ -669,6 +671,8 @@ static void graphics_main(char *name, char *fontdir)
 	}
 
 	graphics_quit_sdl();
+
+	return 0;
 }
 
 static void usage(const char *prog)
@@ -682,7 +686,7 @@ static void usage(const char *prog)
 
 int main(int argc, char *argv[])
 {
-	int ch;
+	int ch, ret;
 	char *ss_name = NULL;
 	char *prog = NULL;
 	char *fontdir = NULL;
@@ -732,10 +736,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	graphics_main(ss_name, fontdir);
+	ret = graphics_main(ss_name, fontdir);
 
 	free(fontdir);
 	fft_eval_exit();
 
-	return 0;
+	return ret;
 }
