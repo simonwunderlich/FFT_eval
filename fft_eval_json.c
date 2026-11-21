@@ -55,7 +55,22 @@ static int print_values(void)
 					float freq;
 					float signal;
 					int data;
-					freq = result->sample.ht20.freq - 10.0 + ((20.0 * i) / SPECTRAL_HT20_NUM_BINS);
+
+					/*
+					 * According to Dave Aragon from University of Washington,
+					 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
+					 * divide 22 MHz channel width into 64 subcarriers but
+					 * only report the middle 56 subcarriers.
+					 *
+					 * For 5 GHz we do not know (Atheros claims it does not support
+					 * this frequency band, but it works).
+					 *
+					 * Since all these calculations map pretty much to -10/+10 MHz,
+					 * and we don't know better, use this assumption as well in 5 GHz.
+					 */
+					freq = result->sample.ht20.freq -
+							(22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 +
+							(22.0 * (i + 0.5) / 64.0);
 
 					/* This is where the "magic" happens: interpret the signal
 					 * to output some kind of data which looks useful.  */
