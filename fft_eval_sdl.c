@@ -187,7 +187,11 @@ static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
 	x = (X_SCALE * (freq - startfreq));
 	if (data == 0)
 		data = 1;
-	signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+	signal = (float)noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+	/* is not visible and might not be representable as integer */
+	if (!(signal > -HEIGHT && signal < HEIGHT))
+		return -1;
 
 	y = 400 - (400.0 + Y_SCALE * signal);
 

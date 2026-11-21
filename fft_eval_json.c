@@ -223,7 +223,7 @@ static int print_values(void)
 					data = result->sample.ath11k.data[i];
 					if (data == 0)
 						data = 1;
-					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					signal = (float)result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 					printf("[ %f, %f ]", freq, signal);
 					if (i < bins - 1)
 						printf(", ");
