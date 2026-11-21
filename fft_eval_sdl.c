@@ -579,6 +579,9 @@ static int graphics_main(char *name, char *fontdir)
 	int startfreq = 2350, accel = 0;
 	int highlight_freq = startfreq;
 
+	/* SDL_PollEvent() does not touch the event when the queue is empty */
+	memset(&event, 0, sizeof(event));
+
 	if (graphics_init_sdl(name, fontdir) < 0) {
 		fprintf(stderr, "Failed to initialize graphics.\n");
 		graphics_quit_sdl();
