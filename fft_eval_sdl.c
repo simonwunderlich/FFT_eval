@@ -11,7 +11,6 @@
  * based chipsets.
  */
 
-#include <errno.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -83,7 +82,7 @@ static int graphics_init_sdl(char *name, const char *fontdir)
 	if (!font) {
 		fprintf(stderr, "Opening font (%s) failed: %s\n",
 		    buf,
-		    strerror(errno));
+		    TTF_GetError());
 		return -1;
 	}
 
