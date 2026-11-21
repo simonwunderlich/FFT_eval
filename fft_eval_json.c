@@ -197,7 +197,7 @@ static int print_values(void)
 				uint64_t datamax = 0, datamin = 65536;
 				uint64_t datasquaresum = 0;
 				int i, bins;
-				printf("\n{ \"tsf\": %08d, \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
+				printf("\n{ \"tsf\": %" PRIu32 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
 				       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));

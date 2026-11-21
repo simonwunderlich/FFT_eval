@@ -425,7 +425,7 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 	if (highlight) {
 		/* prints some statistical data about the currently selected
 		 * data sample and auxiliary data. */
-		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %04d, noise %04d, max_magnitude %04d max_index %03d max_exp %03d tsf %08d | ",
+		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %04d, noise %04d, max_magnitude %04d max_index %03d max_exp %03d tsf %"PRIu32" | ",
 		       result->sample.ath11k.header.freq1, result->sample.ath11k.header.freq1,
 		       result->sample.ath11k.header.chan_width_mhz,
 		       bins, result->sample.ath11k.header.rssi,
