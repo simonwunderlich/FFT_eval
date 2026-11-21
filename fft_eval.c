@@ -157,7 +157,7 @@ int fft_eval_init(char *fname)
 		switch (tlv->type) {
 		case ATH_FFT_SAMPLE_HT20:
 			if (sample_len != sizeof(result->sample.ht20)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected %zu)\n",
 					sample_len, sizeof(result->sample.ht20));
 				break;
 			}
@@ -170,7 +170,7 @@ int fft_eval_init(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			if (sample_len != sizeof(result->sample.ht40)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected %zu)\n",
 					sample_len, sizeof(result->sample.ht40));
 				break;
 			}
@@ -184,7 +184,7 @@ int fft_eval_init(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_ATH10K:
 			if (sample_len < sizeof(result->sample.ath10k.header)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected at least %zu)\n",
 					sample_len, sizeof(result->sample.ath10k.header));
 				break;
 			}
@@ -217,7 +217,7 @@ int fft_eval_init(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			if (sample_len < sizeof(result->sample.ath11k.header)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected at least %zu)\n",
 					sample_len, sizeof(result->sample.ath11k.header));
 				break;
 			}
