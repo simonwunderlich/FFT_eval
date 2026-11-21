@@ -82,6 +82,12 @@ static char *read_file(char *fname, size_t *size)
 		buf = newbuf;
 
 		ret = fread(buf + *size, 1, 4096, fp);
+		if (ferror(fp)) {
+			free(buf);
+			fclose(fp);
+			return NULL;
+		}
+
 		*size += ret;
 	}
 	fclose(fp);
