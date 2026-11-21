@@ -385,7 +385,7 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 		/* prints some statistical data about the currently selected
 		 * data sample and auxiliary data. */
 		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %03d, noise %03d, max_magnitude %04d max_index %03d tsf %"PRIu64" | ",
-		       result->sample.ath10k.header.freq1, result->sample.ath10k.header.freq1,
+		       result->sample.ath10k.header.freq1, result->sample.ath10k.header.freq2,
 		       result->sample.ath10k.header.chan_width_mhz,
 		       bins, result->sample.ath10k.header.rssi,
 		       result->sample.ath10k.header.noise, result->sample.ath10k.header.max_magnitude,
@@ -434,7 +434,7 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 		/* prints some statistical data about the currently selected
 		 * data sample and auxiliary data. */
 		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %04d, noise %04d, max_magnitude %04d max_index %03d max_exp %03d tsf %"PRIu32" | ",
-		       result->sample.ath11k.header.freq1, result->sample.ath11k.header.freq1,
+		       result->sample.ath11k.header.freq1, result->sample.ath11k.header.freq2,
 		       result->sample.ath11k.header.chan_width_mhz,
 		       bins, result->sample.ath11k.header.rssi,
 		       result->sample.ath11k.header.noise, result->sample.ath11k.header.max_magnitude,
