@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: Sven Eckelmann <sven@narfation.org>
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux (${{ matrix.compiler }}, ${{ matrix.variant.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - gcc
+          - clang
+        variant:
+          - name: coverage
+            cflags: "--coverage"
+          - name: O3
+            cflags: "-O3"
+          - name: valgrind
+            cflags: "-O1 -g3"
+            testrun_wrapper: "valgrind -q --error-exitcode=126 --track-origins=yes --leak-check=full"
+          - name: sanitizers
+            cflags: "-g3 -fsanitize=undefined -fsanitize=address -fsanitize=leak"
+    env:
+      CC: ${{ matrix.compiler }}
+      CFLAGS: ${{ matrix.variant.cflags }}
+      TESTRUN_WRAPPER: ${{ matrix.variant.testrun_wrapper }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libsdl2-dev libsdl2-ttf-dev valgrind
+      - name: Build and test
+        run: make clean && make -j"$(nproc)" test
+
+  # test without sdl installed
+  linux-no-sdl:
+    name: Linux (without SDL)
+    runs-on: ubuntu-latest
+    env:
+      MAKE_FLAGS: CONFIG_fft_eval_sdl=n CONFIG_fft_eval_json=y V=s
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test
+        run: make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test
+
+  # windows native build
+  windows:
+    name: Windows (MSYS2 ${{ matrix.msystem }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        msystem:
+          - UCRT64
+          - MINGW64
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      MAKE_FLAGS: V=s
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: make which
+          pacboy: >-
+            gcc:p
+            pkgconf:p
+            SDL2:p
+            SDL2_ttf:p
+      - name: Build
+        run: make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS}
+
+  # osx native build
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    env:
+      MAKE_FLAGS: V=s
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install pkgconf sdl2 sdl2_ttf
+      - name: Build and test
+        run: make ${MAKE_FLAGS} clean && make ${MAKE_FLAGS} test
+
+  # reuse test
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fsfe/reuse-action@v5
