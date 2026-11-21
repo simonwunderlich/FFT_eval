@@ -30,7 +30,7 @@
 
 /* range of the start frequency (left border) of the view in MHz */
 #define STARTFREQ_MIN	2300
-#define STARTFREQ_MAX	6000
+#define STARTFREQ_MAX	7000
 
 #define X_SCALE	10
 #define Y_SCALE	4
@@ -489,7 +489,7 @@ static int draw_picture(int highlight, int startfreq)
 		}
 
 	/* vertical lines (frequency) */
-	for (i = 2300; i < 6000; i += 10) {
+	for (i = STARTFREQ_MIN; i <= STARTFREQ_MAX + WIDTH / X_SCALE; i += 10) {
 		x = (X_SCALE * (i - startfreq));
 
 		if (x < 0 || x >= WIDTH)
