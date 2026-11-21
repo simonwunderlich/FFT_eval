@@ -294,6 +294,7 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 
 		data = result->sample.ht40.data[i];
 		data <<= result->sample.ht40.max_exp;
+		data *= data;
 		datasquaresum_upper += data;
 
 		if (data > datamax) datamax = data;
