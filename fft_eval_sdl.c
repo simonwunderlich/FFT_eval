@@ -586,6 +586,7 @@ static int graphics_main(char *name, char *fontdir)
 	int change = 1, scroll = 0;
 	int startfreq = 2350, accel = 0;
 	int highlight_freq = startfreq;
+	int has_event, scroll_dir = 0;
 
 	/* SDL_PollEvent() does not touch the event when the queue is empty */
 	memset(&event, 0, sizeof(event));
@@ -628,10 +629,14 @@ static int graphics_main(char *name, char *fontdir)
 				accel = 0;
 		}
 
-		if (accel)
-			SDL_PollEvent(&event);
+		if (accel || scroll_dir)
+			has_event = SDL_PollEvent(&event);
 		else
-			SDL_WaitEvent(&event);
+			has_event = SDL_WaitEvent(&event);
+
+		/* don't evaluate the previous event again */
+		if (!has_event)
+			event.type = SDL_FIRSTEVENT;
 
 		switch (event.type) {
 		case SDL_QUIT:
@@ -654,11 +659,11 @@ static int graphics_main(char *name, char *fontdir)
 				}
 				break;
 			case SDLK_PAGEUP:
-				accel-= 2;
+				scroll_dir = -1;
 				scroll = 1;
 				break;
 			case SDLK_PAGEDOWN:
-				accel+= 2;
+				scroll_dir = 1;
 				scroll = 1;
 				break;
 			case SDLK_2:
@@ -679,6 +684,20 @@ static int graphics_main(char *name, char *fontdir)
 				break;
 			}
 			break;
+		case SDL_KEYUP:
+			switch (event.key.keysym.sym) {
+			case SDLK_PAGEUP:
+				if (scroll_dir < 0)
+					scroll_dir = 0;
+				break;
+			case SDLK_PAGEDOWN:
+				if (scroll_dir > 0)
+					scroll_dir = 0;
+				break;
+			default:
+				break;
+			}
+			break;
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
 			case SDL_WINDOWEVENT_EXPOSED:
@@ -686,6 +705,10 @@ static int graphics_main(char *name, char *fontdir)
 				break;
 			}
 		}
+
+		/* scroll faster as long as the key is pressed */
+		accel += 2 * scroll_dir;
+
 		if (accel) {
 			startfreq += accel;
 			if (accel > 0)			accel--;
