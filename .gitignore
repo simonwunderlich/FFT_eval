@@ -5,4 +5,6 @@
 /*.o
 /samples.test
 /fft_eval_json
+/fft_eval_json.exe
 /fft_eval_sdl
+/fft_eval_sdl.exe

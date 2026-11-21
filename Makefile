@@ -106,7 +106,7 @@ $(obj-y):
 	$(LINK.o) $^ $(LDLIBS) $(LDLIBS_$(@)) -o $@
 
 clean:
-	$(RM) $(BINARY_NAMES) $(OBJ) $(DEP) samples/*.test
+	$(RM) $(BINARY_NAMES) $(addsuffix .exe,$(BINARY_NAMES)) $(OBJ) $(DEP) samples/*.test
 
 install: $(obj-y)
 	$(MKDIR) $(DESTDIR)$(BINDIR)
