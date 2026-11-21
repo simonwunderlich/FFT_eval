@@ -36,7 +36,7 @@ matrix:
       env:
       - MXE_CPU=i686
       - PATH="/usr/lib/mxe/usr/bin/:$PATH"
-      - MAKE_FLAGS="CROSS=${MXE_CPU}-w64-mingw32.static- V=s"
+      - MAKE_FLAGS="CROSS=${MXE_CPU}-w64-mingw32.static- CC=${MXE_CPU}-w64-mingw32.static-gcc V=s"
       addons:
         apt:
           sources:
