@@ -29,7 +29,7 @@ jobs:
             cflags: "-O1 -g3"
             testrun_wrapper: "valgrind -q --error-exitcode=126 --track-origins=yes --leak-check=full"
           - name: sanitizers
-            cflags: "-g3 -fsanitize=undefined -fsanitize=address -fsanitize=leak"
+            cflags: "-g3 -fsanitize=undefined -fsanitize=address -fsanitize=leak -fno-sanitize-recover=undefined"
     env:
       CC: ${{ matrix.compiler }}
       CFLAGS: ${{ matrix.variant.cflags }}
