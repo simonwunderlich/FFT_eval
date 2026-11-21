@@ -266,6 +266,12 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
 	fprintf(stderr, "\n");
 
+	if (!ss_name) {
+		fprintf(stderr, "ERROR: need scan file\n");
+		usage(prog);
+		return 127;
+	}
+
 	if (fft_eval_init(ss_name) < 0) {
 		fprintf(stderr, "Couldn't read scanfile ...\n");
 		usage(prog);
