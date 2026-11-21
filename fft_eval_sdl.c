@@ -469,6 +469,12 @@ static int draw_picture(int highlight, int startfreq)
 	SDL_Rect DestR;
 
 	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, BPP, RMASK, GMASK, BMASK, AMASK);
+	if (!surface) {
+		fprintf(stderr, "Creating SDL surface failed: %s\n",
+			SDL_GetError());
+		return highlight_freq;
+	}
+
 	pixels = (Uint32 *) surface->pixels;
 	for (y = 0; y < HEIGHT; y++)
 		for (x = 0; x < WIDTH; x++) {
@@ -538,6 +544,11 @@ static int draw_picture(int highlight, int startfreq)
 
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 	SDL_FreeSurface(surface);
+	if (!texture) {
+		fprintf(stderr, "Creating SDL texture failed: %s\n",
+			SDL_GetError());
+		return highlight_freq;
+	}
 
 	DestR.x = 0;
 	DestR.y = 0;
