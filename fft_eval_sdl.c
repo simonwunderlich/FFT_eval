@@ -28,6 +28,10 @@
 #define HEIGHT	650
 #define BPP	32
 
+/* range of the start frequency (left border) of the view in MHz */
+#define STARTFREQ_MIN	2300
+#define STARTFREQ_MAX	6000
+
 #define X_SCALE	10
 #define Y_SCALE	4
 
@@ -612,6 +616,12 @@ static int graphics_main(char *name, char *fontdir)
 	
 			if (highlight_freq - 300 > (startfreq + WIDTH/X_SCALE))
 				accel = 100;
+
+			/* the highlighted object is outside of the range */
+			if (accel < 0 && startfreq <= STARTFREQ_MIN)
+				accel = 0;
+			if (accel > 0 && startfreq >= STARTFREQ_MAX)
+				accel = 0;
 		}
 
 		if (accel)
@@ -678,8 +688,8 @@ static int graphics_main(char *name, char *fontdir)
 			if (accel < 0)			accel++;
 			change = 1;
 		}
-		if (startfreq < 2300)		startfreq = 2300;
-		if (startfreq > 6000)		startfreq = 6000;
+		if (startfreq < STARTFREQ_MIN)	startfreq = STARTFREQ_MIN;
+		if (startfreq > STARTFREQ_MAX)	startfreq = STARTFREQ_MAX;
 		if (accel < -20)		accel = -20;
 		if (accel >  20)		accel = 20;
 	}
