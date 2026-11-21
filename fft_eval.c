@@ -141,7 +141,7 @@ int fft_eval_init(char *fname)
 			break;
 		}
 
-		if (sample_len > sizeof(*result)) {
+		if (sample_len > sizeof(result->sample)) {
 			fprintf(stderr, "sample length %zu too long\n", sample_len);
 			continue;
 		}
