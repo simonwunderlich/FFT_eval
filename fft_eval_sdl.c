@@ -483,7 +483,7 @@ static int draw_picture(int highlight, int startfreq)
 	for (i = 2300; i < 6000; i += 10) {
 		x = (X_SCALE * (i - startfreq));
 
-		if (x < 0 || x > WIDTH)
+		if (x < 0 || x >= WIDTH)
 			continue;
 
 		for (y = 0; y < HEIGHT - 20; y++)
