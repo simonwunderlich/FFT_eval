@@ -34,15 +34,15 @@ static int print_values(void)
 
 		case ATH_FFT_SAMPLE_HT20:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
+				uint64_t datasquaresum = 0;
 
 				/* prints some statistical data about the
 				 * data sample and auxiliary data. */
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht20.tsf, result->sample.ht20.freq, result->sample.ht20.rssi,
 				       result->sample.ht20.noise);
 				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-					int data;
+					uint64_t data;
 					data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
 					data *= data;
 					datasquaresum += data;
@@ -55,7 +55,22 @@ static int print_values(void)
 					float freq;
 					float signal;
 					int data;
-					freq = result->sample.ht20.freq - 10.0 + ((20.0 * i) / SPECTRAL_HT20_NUM_BINS);
+
+					/*
+					 * According to Dave Aragon from University of Washington,
+					 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
+					 * divide 22 MHz channel width into 64 subcarriers but
+					 * only report the middle 56 subcarriers.
+					 *
+					 * For 5 GHz we do not know (Atheros claims it does not support
+					 * this frequency band, but it works).
+					 *
+					 * Since all these calculations map pretty much to -10/+10 MHz,
+					 * and we don't know better, use this assumption as well in 5 GHz.
+					 */
+					freq = result->sample.ht20.freq -
+							(22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 +
+							(22.0 * (i + 0.5) / 64.0);
 
 					/* This is where the "magic" happens: interpret the signal
 					 * to output some kind of data which looks useful.  */
@@ -73,10 +88,10 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum_lower = 0;
-				int datasquaresum_upper = 0;
-				int datasquaresum;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
+				uint64_t datasquaresum_lower = 0;
+				uint64_t datasquaresum_upper = 0;
+				uint64_t datasquaresum;
 				int i;
 				int centerfreq;
 				s8 noise;
@@ -86,7 +101,7 @@ static int print_values(void)
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht40.tsf, result->sample.ht40.freq, result->sample.ht40.lower_rssi,
 				       result->sample.ht40.lower_noise);
 				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
-					int data;
+					uint64_t data;
 
 					data = result->sample.ht40.data[i];
 					data <<= result->sample.ht40.max_exp;
@@ -100,10 +115,11 @@ static int print_values(void)
 				}
 
 				for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
-					int data;
+					uint64_t data;
 
 					data = result->sample.ht40.data[i];
 					data <<= result->sample.ht40.max_exp;
+					data *= data;
 					datasquaresum_upper += data;
 
 					if (data > datamax)
@@ -154,8 +170,8 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_ATH10K:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
+				uint64_t datasquaresum = 0;
 				int i, bins;
 				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
 				       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
@@ -163,7 +179,7 @@ static int print_values(void)
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
 
 				for (i = 0; i < bins; i++) {
-					int data;
+					uint64_t data;
 
 					data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
 					data *= data;
@@ -194,18 +210,18 @@ static int print_values(void)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			{
-				int datamax = 0, datamin = 65536;
-				int datasquaresum = 0;
+				uint64_t datamax = 0, datamin = UINT64_MAX;
+				uint64_t datasquaresum = 0;
 				int i, bins;
-				printf("\n{ \"tsf\": %08d, \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
+				printf("\n{ \"tsf\": %" PRIu32 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
 				       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
 
 				for (i = 0; i < bins; i++) {
-					int data;
+					uint64_t data;
 
-					data = result->sample.ath11k.data[i];
+					data = (result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp);
 					data *= data;
 					datasquaresum += data;
 					if (data > datamax)
@@ -220,10 +236,10 @@ static int print_values(void)
 					float signal;
 					freq = result->sample.ath11k.header.freq1 - (result->sample.ath11k.header.chan_width_mhz) / 2 + (result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
 
-					data = result->sample.ath11k.data[i];
+					data = result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp;
 					if (data == 0)
 						data = 1;
-					signal = result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					signal = (float)result->sample.ath11k.header.noise + result->sample.ath11k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 					printf("[ %f, %f ]", freq, signal);
 					if (i < bins - 1)
 						printf(", ");
@@ -265,6 +281,12 @@ int main(int argc, char *argv[])
 
 	fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
 	fprintf(stderr, "\n");
+
+	if (!ss_name) {
+		fprintf(stderr, "ERROR: need scan file\n");
+		usage(prog);
+		return 127;
+	}
 
 	if (fft_eval_init(ss_name) < 0) {
 		fprintf(stderr, "Couldn't read scanfile ...\n");

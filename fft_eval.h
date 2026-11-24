@@ -33,6 +33,12 @@ enum nl80211_channel_type {
 /*
  * ath9k spectral definition
  */
+/*
+ * Limit for the exponent which has to be applied to the FFT bins. The sum of
+ * the squares of up to 512 bins (8 bit << max_exp) must fit into 64 bit.
+ */
+#define SPECTRAL_MAX_EXP                19
+
 #define SPECTRAL_HT20_NUM_BINS          56
 #define SPECTRAL_HT20_40_NUM_BINS		128
 

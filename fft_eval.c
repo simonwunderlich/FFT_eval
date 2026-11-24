@@ -76,12 +76,19 @@ static char *read_file(char *fname, size_t *size)
 		newbuf = realloc(buf, *size + 4097);
 		if (!newbuf) {
 			free(buf);
+			fclose(fp);
 			return NULL;
 		}
 
 		buf = newbuf;
 
 		ret = fread(buf + *size, 1, 4096, fp);
+		if (ferror(fp)) {
+			free(buf);
+			fclose(fp);
+			return NULL;
+		}
+
 		*size += ret;
 	}
 	fclose(fp);
@@ -90,6 +97,43 @@ static char *read_file(char *fname, size_t *size)
 		buf[*size] = '\0';
 
 	return buf;
+}
+
+/*
+ * is_zero - checks whether all FFT bins are zero
+ *
+ * @data: FFT bins
+ * @len: number of FFT bins
+ *
+ * returns 1 when no bin contains a value, 0 otherwise.
+ */
+static int is_zero(const u8 *data, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (data[i] != 0)
+			return 0;
+	}
+
+	return 1;
+}
+
+/*
+ * is_valid_max_exp - checks whether the bins can be scaled by the exponent
+ *
+ * @max_exp: exponent of the sample
+ *
+ * returns 1 when the exponent can be used, 0 otherwise.
+ */
+static int is_valid_max_exp(u8 max_exp)
+{
+	if (max_exp > SPECTRAL_MAX_EXP) {
+		fprintf(stderr, "invalid max_exp %d\n", max_exp);
+		return 0;
+	}
+
+	return 1;
 }
 
 /*
@@ -127,14 +171,15 @@ int fft_eval_init(char *fname)
 		tlv = (struct fft_sample_tlv *) pos;
 		CONVERT_BE16(tlv->length);
 		sample_len = sizeof(*tlv) + tlv->length;
-		pos += sample_len;
 
 		if (remaining_len < sample_len) {
 			fprintf(stderr, "Found incomplete TLV at position 0x%zx\n", rel_pos);
 			break;
 		}
 
-		if (sample_len > sizeof(*result)) {
+		pos += sample_len;
+
+		if (sample_len > sizeof(result->sample)) {
 			fprintf(stderr, "sample length %zu too long\n", sample_len);
 			continue;
 		}
@@ -150,10 +195,21 @@ int fft_eval_init(char *fname)
 		switch (tlv->type) {
 		case ATH_FFT_SAMPLE_HT20:
 			if (sample_len != sizeof(result->sample.ht20)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected %zu)\n",
 					sample_len, sizeof(result->sample.ht20));
 				break;
 			}
+
+			/*
+			 * The signal strength of a bin is calculated relative to
+			 * the sum of all bins. This is not possible when there
+			 * is no data at all.
+			 */
+			if (is_zero(result->sample.ht20.data, SPECTRAL_HT20_NUM_BINS))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ht20.max_exp))
+				break;
 
 			CONVERT_BE16(result->sample.ht20.freq);
 			CONVERT_BE16(result->sample.ht20.max_magnitude);
@@ -163,10 +219,31 @@ int fft_eval_init(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			if (sample_len != sizeof(result->sample.ht40)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected %zu)\n",
 					sample_len, sizeof(result->sample.ht40));
 				break;
 			}
+
+			/*
+			 * The position of the secondary channel is required to
+			 * calculate the center frequency of the sample.
+			 */
+			if (result->sample.ht40.channel_type != NL80211_CHAN_HT40PLUS &&
+			    result->sample.ht40.channel_type != NL80211_CHAN_HT40MINUS) {
+				fprintf(stderr, "invalid channel type %d\n",
+					result->sample.ht40.channel_type);
+				break;
+			}
+
+			/* lower and upper half are evaluated independently */
+			if (is_zero(result->sample.ht40.data,
+				    SPECTRAL_HT20_40_NUM_BINS / 2) ||
+			    is_zero(result->sample.ht40.data + SPECTRAL_HT20_40_NUM_BINS / 2,
+				    SPECTRAL_HT20_40_NUM_BINS / 2))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ht40.max_exp))
+				break;
 
 			CONVERT_BE16(result->sample.ht40.freq);
 			CONVERT_BE64(result->sample.ht40.tsf);
@@ -177,7 +254,7 @@ int fft_eval_init(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_ATH10K:
 			if (sample_len < sizeof(result->sample.ath10k.header)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected at least %zu)\n",
 					sample_len, sizeof(result->sample.ath10k.header));
 				break;
 			}
@@ -198,6 +275,12 @@ int fft_eval_init(char *fname)
 			if (result->sample.ath10k.header.noise == 0)
 				break;
 
+			if (is_zero(result->sample.ath10k.data, bins))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ath10k.header.max_exp))
+				break;
+
 			CONVERT_BE16(result->sample.ath10k.header.freq1);
 			CONVERT_BE16(result->sample.ath10k.header.freq2);
 			CONVERT_BE16(result->sample.ath10k.header.noise);
@@ -210,7 +293,7 @@ int fft_eval_init(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_ATH11K:
 			if (sample_len < sizeof(result->sample.ath11k.header)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected at least %zd)\n",
+				fprintf(stderr, "wrong sample length (have %zu, expected at least %zu)\n",
 					sample_len, sizeof(result->sample.ath11k.header));
 				break;
 			}
@@ -232,6 +315,12 @@ int fft_eval_init(char *fname)
 			 * but some datasets contain it which creates bogus results.
 			 */
 			if (result->sample.ath11k.header.noise == 0)
+				break;
+
+			if (is_zero(result->sample.ath11k.data, bins))
+				break;
+
+			if (!is_valid_max_exp(result->sample.ath11k.header.max_exp))
 				break;
 
 			CONVERT_BE16(result->sample.ath11k.header.freq1);
@@ -306,7 +395,8 @@ void fft_eval_usage(const char *prog)
 	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
 	fprintf(stderr, "iw dev wlan0 scan\n");
 	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > samples\n");
+	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > /tmp/fft_results\n");
+	fprintf(stderr, "%s /tmp/fft_results\n", prog);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
 	fprintf(stderr, "\n");
@@ -316,7 +406,8 @@ void fft_eval_usage(const char *prog)
 	fprintf(stderr, "echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
 	fprintf(stderr, "iw dev wlan0 scan\n");
 	fprintf(stderr, "echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl\n");
-	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples\n");
+	fprintf(stderr, "cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > /tmp/fft_results\n");
+	fprintf(stderr, "%s /tmp/fft_results\n", prog);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "(NOTE: maybe debugfs must be mounted first: mount -t debugfs none /sys/kernel/debug/ )\n");
 	fprintf(stderr, "\n");

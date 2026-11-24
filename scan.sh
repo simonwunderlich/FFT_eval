@@ -43,4 +43,4 @@ $SCAN_CMD | grep freq ; echo ""
 $SCAN_CMD | grep freq ; echo ""
 cat $ATH9K_PATH/spectral_scan0 > $OUT_NAME
 echo disable > $ATH9K_PATH/spectral_scan_ctl
-./fft_eval $OUT_NAME 2>/dev/null  1>/dev/null&
+./fft_eval_sdl $OUT_NAME 2>/dev/null  1>/dev/null&

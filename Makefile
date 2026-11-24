@@ -79,7 +79,11 @@ ifeq ($(CONFIG_fft_eval_sdl),y)
   LDLIBS_fft_eval_sdl += $(LIBSDL2TTF_LDLIBS)
 endif
 
-CC = $(CROSS)gcc
+# default to the (cross) gcc but allow to select a different compiler via
+# the environment or the make parameters
+ifeq ($(origin CC), default)
+  CC = $(CROSS)gcc
+endif
 RM ?= rm -f
 INSTALL ?= install
 MKDIR ?= mkdir -p
@@ -102,7 +106,7 @@ $(obj-y):
 	$(LINK.o) $^ $(LDLIBS) $(LDLIBS_$(@)) -o $@
 
 clean:
-	$(RM) $(BINARY_NAMES) $(OBJ) $(DEP) samples/*.test
+	$(RM) $(BINARY_NAMES) $(addsuffix .exe,$(BINARY_NAMES)) $(OBJ) $(DEP) samples/*.test
 
 install: $(obj-y)
 	$(MKDIR) $(DESTDIR)$(BINDIR)

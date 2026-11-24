@@ -11,7 +11,6 @@
  * based chipsets.
  */
 
-#include <errno.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -28,6 +27,10 @@
 #define WIDTH	1600
 #define HEIGHT	650
 #define BPP	32
+
+/* range of the start frequency (left border) of the view in MHz */
+#define STARTFREQ_MIN	2300
+#define STARTFREQ_MAX	7000
 
 #define X_SCALE	10
 #define Y_SCALE	4
@@ -83,7 +86,7 @@ static int graphics_init_sdl(char *name, const char *fontdir)
 	if (!font) {
 		fprintf(stderr, "Opening font (%s) failed: %s\n",
 		    buf,
-		    strerror(errno));
+		    TTF_GetError());
 		return -1;
 	}
 
@@ -170,7 +173,8 @@ static int render_text(SDL_Surface *surface, char *text, int x, int y)
 
 
 static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
-			  int noise, int rssi, int data, int datasquaresum,
+			  int noise, int rssi, int data,
+			  uint64_t datasquaresum,
 			  int highlight)
 {
 	Uint32 color, opacity;
@@ -183,7 +187,11 @@ static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
 	x = (X_SCALE * (freq - startfreq));
 	if (data == 0)
 		data = 1;
-	signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+	signal = (float)noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+	/* is not visible and might not be representable as integer */
+	if (!(signal > -HEIGHT && signal < HEIGHT))
+		return -1;
 
 	y = 400 - (400.0 + Y_SCALE * signal);
 
@@ -204,12 +212,12 @@ static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
 static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 			    float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum = 0;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
+	uint64_t datasquaresum = 0;
 	int i;
 
 	for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-		int data;
+		uint64_t data;
 
 		data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
 		data *= data;
@@ -225,7 +233,7 @@ static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 			result->sample.ht20.freq, result->sample.ht20.rssi, result->sample.ht20.noise,
 			result->sample.ht20.max_magnitude, result->sample.ht20.max_index, result->sample.ht20.bitmap_weight,
 			result->sample.ht20.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum = %"PRIu64"\n", datamax, datamin, datasquaresum);
 	}
 
 	for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
@@ -260,17 +268,17 @@ static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 			       float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum_lower = 0;
-	int datasquaresum_upper = 0;
-	int datasquaresum;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
+	uint64_t datasquaresum_lower = 0;
+	uint64_t datasquaresum_upper = 0;
+	uint64_t datasquaresum;
 	int i;
 	int centerfreq;
 	s8 noise;
 	s8 rssi;
 
 	for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
-		int data;
+		uint64_t data;
 
 		data = result->sample.ht40.data[i];
 		data <<= result->sample.ht40.max_exp;
@@ -282,10 +290,11 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 	}
 
 	for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
-		int data;
+		uint64_t data;
 
 		data = result->sample.ht40.data[i];
 		data <<= result->sample.ht40.max_exp;
+		data *= data;
 		datasquaresum_upper += data;
 
 		if (data > datamax) datamax = data;
@@ -318,9 +327,9 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 		       result->sample.ht40.lower_bitmap_weight,
 		       result->sample.ht40.upper_bitmap_weight,
 		       result->sample.ht40.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum_lower = %d\n",
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum_lower = %"PRIu64"\n",
 		       datamax, datamin, datasquaresum_lower);
-		printf("datamax = %d, datamin = %d, datasquaresum_upper = %d\n",
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum_upper = %"PRIu64"\n",
 		       datamax, datamin, datasquaresum_upper);
 	}
 
@@ -354,8 +363,8 @@ static int draw_sample_ht20_40(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 			      float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum = 0;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
+	uint64_t datasquaresum = 0;
 	int i, bins;
 
 	bins = result->sample.tlv.length -
@@ -364,7 +373,7 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 
 
 	for (i = 0; i < bins; i++) {
-		int data;
+		uint64_t data;
 
 		data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
 		data *= data;
@@ -377,12 +386,12 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 		/* prints some statistical data about the currently selected
 		 * data sample and auxiliary data. */
 		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %03d, noise %03d, max_magnitude %04d max_index %03d tsf %"PRIu64" | ",
-		       result->sample.ath10k.header.freq1, result->sample.ath10k.header.freq1,
+		       result->sample.ath10k.header.freq1, result->sample.ath10k.header.freq2,
 		       result->sample.ath10k.header.chan_width_mhz,
 		       bins, result->sample.ath10k.header.rssi,
 		       result->sample.ath10k.header.noise, result->sample.ath10k.header.max_magnitude,
 		       result->sample.ath10k.header.max_index, result->sample.ath10k.header.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum = %"PRIu64"\n", datamax, datamin, datasquaresum);
 	}
 
 	for (i = 0; i < bins; i++) {
@@ -404,8 +413,8 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 			      float startfreq, int highlight)
 {
-	int datamax = 0, datamin = 65536;
-	int datasquaresum = 0;
+	uint64_t datamax = 0, datamin = UINT64_MAX;
+	uint64_t datasquaresum = 0;
 	int i, bins;
 
 	bins = result->sample.tlv.length -
@@ -413,7 +422,7 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 		sizeof(result->sample.ath11k.header.tlv));
 
 	for (i = 0; i < bins; i++) {
-		int data;
+		uint64_t data;
 
 		data = (result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp);
 		data *= data;
@@ -425,14 +434,14 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 	if (highlight) {
 		/* prints some statistical data about the currently selected
 		 * data sample and auxiliary data. */
-		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %04d, noise %04d, max_magnitude %04d max_index %03d max_exp %03d tsf %08d | ",
-		       result->sample.ath11k.header.freq1, result->sample.ath11k.header.freq1,
+		printf("result: freq %04d/%04d (width %d MHz), %d bins, rssi %04d, noise %04d, max_magnitude %04d max_index %03d max_exp %03d tsf %"PRIu32" | ",
+		       result->sample.ath11k.header.freq1, result->sample.ath11k.header.freq2,
 		       result->sample.ath11k.header.chan_width_mhz,
 		       bins, result->sample.ath11k.header.rssi,
 		       result->sample.ath11k.header.noise, result->sample.ath11k.header.max_magnitude,
 		       result->sample.ath11k.header.max_index, result->sample.ath11k.header.max_exp,
 		       result->sample.ath11k.header.tsf);
-		printf("datamax = %d, datamin = %d, datasquaresum = %d\n", datamax, datamin, datasquaresum);
+		printf("datamax = %"PRIu64", datamin = %"PRIu64", datasquaresum = %"PRIu64"\n", datamax, datamin, datasquaresum);
 	}
 
 	for (i = 0; i < bins; i++) {
@@ -469,6 +478,12 @@ static int draw_picture(int highlight, int startfreq)
 	SDL_Rect DestR;
 
 	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, BPP, RMASK, GMASK, BMASK, AMASK);
+	if (!surface) {
+		fprintf(stderr, "Creating SDL surface failed: %s\n",
+			SDL_GetError());
+		return highlight_freq;
+	}
+
 	pixels = (Uint32 *) surface->pixels;
 	for (y = 0; y < HEIGHT; y++)
 		for (x = 0; x < WIDTH; x++) {
@@ -479,10 +494,10 @@ static int draw_picture(int highlight, int startfreq)
 		}
 
 	/* vertical lines (frequency) */
-	for (i = 2300; i < 6000; i += 10) {
+	for (i = STARTFREQ_MIN; i <= STARTFREQ_MAX + WIDTH / X_SCALE; i += 10) {
 		x = (X_SCALE * (i - startfreq));
 
-		if (x < 0 || x > WIDTH)
+		if (x < 0 || x >= WIDTH)
 			continue;
 
 		for (y = 0; y < HEIGHT - 20; y++)
@@ -538,6 +553,11 @@ static int draw_picture(int highlight, int startfreq)
 
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 	SDL_FreeSurface(surface);
+	if (!texture) {
+		fprintf(stderr, "Creating SDL texture failed: %s\n",
+			SDL_GetError());
+		return highlight_freq;
+	}
 
 	DestR.x = 0;
 	DestR.y = 0;
@@ -556,8 +576,9 @@ static int draw_picture(int highlight, int startfreq)
 /*
  * graphics_main - sets up the data and holds the mainloop.
  *
+ * returns 0 on success, -1 on error.
  */
-static void graphics_main(char *name, char *fontdir)
+static int graphics_main(char *name, char *fontdir)
 {
 	SDL_Event event;
 	char *videodrv;
@@ -566,10 +587,15 @@ static void graphics_main(char *name, char *fontdir)
 	int change = 1, scroll = 0;
 	int startfreq = 2350, accel = 0;
 	int highlight_freq = startfreq;
+	int has_event, scroll_dir = 0;
+
+	/* SDL_PollEvent() does not touch the event when the queue is empty */
+	memset(&event, 0, sizeof(event));
 
 	if (graphics_init_sdl(name, fontdir) < 0) {
 		fprintf(stderr, "Failed to initialize graphics.\n");
-		return;
+		graphics_quit_sdl();
+		return -1;
 	}
 
 	/* don't hang forever with dummy video driver */
@@ -596,12 +622,22 @@ static void graphics_main(char *name, char *fontdir)
 	
 			if (highlight_freq - 300 > (startfreq + WIDTH/X_SCALE))
 				accel = 100;
+
+			/* the highlighted object is outside of the range */
+			if (accel < 0 && startfreq <= STARTFREQ_MIN)
+				accel = 0;
+			if (accel > 0 && startfreq >= STARTFREQ_MAX)
+				accel = 0;
 		}
 
-		if (accel)
-			SDL_PollEvent(&event);
+		if (accel || scroll_dir)
+			has_event = SDL_PollEvent(&event);
 		else
-			SDL_WaitEvent(&event);
+			has_event = SDL_WaitEvent(&event);
+
+		/* don't evaluate the previous event again */
+		if (!has_event)
+			event.type = SDL_FIRSTEVENT;
 
 		switch (event.type) {
 		case SDL_QUIT:
@@ -624,11 +660,11 @@ static void graphics_main(char *name, char *fontdir)
 				}
 				break;
 			case SDLK_PAGEUP:
-				accel-= 2;
+				scroll_dir = -1;
 				scroll = 1;
 				break;
 			case SDLK_PAGEDOWN:
-				accel+= 2;
+				scroll_dir = 1;
 				scroll = 1;
 				break;
 			case SDLK_2:
@@ -649,6 +685,20 @@ static void graphics_main(char *name, char *fontdir)
 				break;
 			}
 			break;
+		case SDL_KEYUP:
+			switch (event.key.keysym.sym) {
+			case SDLK_PAGEUP:
+				if (scroll_dir < 0)
+					scroll_dir = 0;
+				break;
+			case SDLK_PAGEDOWN:
+				if (scroll_dir > 0)
+					scroll_dir = 0;
+				break;
+			default:
+				break;
+			}
+			break;
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
 			case SDL_WINDOWEVENT_EXPOSED:
@@ -656,19 +706,25 @@ static void graphics_main(char *name, char *fontdir)
 				break;
 			}
 		}
+
+		/* scroll faster as long as the key is pressed */
+		accel += 2 * scroll_dir;
+
 		if (accel) {
 			startfreq += accel;
 			if (accel > 0)			accel--;
 			if (accel < 0)			accel++;
 			change = 1;
 		}
-		if (startfreq < 2300)		startfreq = 2300;
-		if (startfreq > 6000)		startfreq = 6000;
+		if (startfreq < STARTFREQ_MIN)	startfreq = STARTFREQ_MIN;
+		if (startfreq > STARTFREQ_MAX)	startfreq = STARTFREQ_MAX;
 		if (accel < -20)		accel = -20;
 		if (accel >  20)		accel = 20;
 	}
 
 	graphics_quit_sdl();
+
+	return 0;
 }
 
 static void usage(const char *prog)
@@ -682,7 +738,7 @@ static void usage(const char *prog)
 
 int main(int argc, char *argv[])
 {
-	int ch;
+	int ch, ret;
 	char *ss_name = NULL;
 	char *prog = NULL;
 	char *fontdir = NULL;
@@ -690,7 +746,7 @@ int main(int argc, char *argv[])
 	if (argc >= 1)
 		prog = argv[0];
 
-	while ((ch = getopt(argc, argv, "f:")) != -1) {
+	while ((ch = getopt(argc, argv, "f:h")) != -1) {
 		switch (ch) {
 		case 'f':
 			if (fontdir)
@@ -732,10 +788,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	graphics_main(ss_name, fontdir);
+	ret = graphics_main(ss_name, fontdir);
 
 	free(fontdir);
 	fft_eval_exit();
 
-	return 0;
+	return ret;
 }

@@ -26,16 +26,27 @@ BUILD
 =====
 
 You need to have SDL2 and SDL2_ttf development packages installed
-on your system, as well as make and gcc.
+on your system, as well as make, pkg-config and gcc.
 
-Just type make to build the program:
+Just type make to build the programs fft_eval_sdl (graphical viewer) and
+fft_eval_json (converter to JSON):
 
 .. code-block:: bash
 
   $ make
-  gcc -O2 -Wall -pedantic -c -o fft_eval.o fft_eval.c
-  gcc -lSDL2 -lSDL2_ttf -o fft_eval fft_eval.o
+      CC fft_eval.o
+      CC fft_eval_sdl.o
+      LD fft_eval_sdl
+      CC fft_eval_json.o
+      LD fft_eval_json
   $
+
+fft_eval_json doesn't need SDL2. The viewer can be disabled when the SDL2
+development packages are not available:
+
+.. code-block:: bash
+
+  $ make CONFIG_fft_eval_sdl=n
 
 USAGE
 =====
@@ -51,7 +62,7 @@ For ath9k/AR92xx or AR93xx based cards, use:
   ip link set dev wlan0 up
   echo chanscan > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl
   iw dev wlan0 scan
-  cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan0 > samples
+  cat /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan0 > /tmp/fft_results
   echo disable > /sys/kernel/debug/ieee80211/phy0/ath9k/spectral_scan_ctl
 
 For ath10k/AR98xx based cards, use:
@@ -63,7 +74,7 @@ For ath10k/AR98xx based cards, use:
   echo trigger > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl
   iw dev wlan0 scan
   echo disable > /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan_ctl
-  cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > samples
+  cat /sys/kernel/debug/ieee80211/phy0/ath10k/spectral_scan0 > /tmp/fft_results
 
 For ath11k based cards, use:
 
@@ -74,7 +85,7 @@ For ath11k based cards, use:
   echo trigger > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl
   iw dev wlan0 scan
   echo disable > /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan_ctl
-  cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > samples
+  cat /sys/kernel/debug/ieee80211/phy0/ath11k/spectral_scan0 > /tmp/fft_results
 
 There are some recorded samples in the "samples" directory to try it
 out without actual hardware.
@@ -87,6 +98,12 @@ To view the FFT results, use:
 
 Navigate through the currently selected datasets using the arrow keys (left
 and right). Scroll through the spectrum using the Page Up/Down keys.
+
+To convert the FFT results to JSON, use:
+
+.. code-block:: bash
+
+  ./fft_eval_json /tmp/fft_results > /tmp/fft_results.json
 
 
 LICENSE
