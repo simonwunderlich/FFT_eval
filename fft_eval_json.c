@@ -243,7 +243,13 @@ static int print_values(void)
 					float freq;
 					int data;
 					float signal;
-					freq = result->sample.ath11k.header.freq1 - (result->sample.ath11k.header.chan_width_mhz) / 2 + (result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
+					/*
+					 * Like for ath10k, the DC bin is in the middle (the max_index of
+					 * ath11k is relative to it).
+					 */
+					freq = fft_eval_bin_freq(result->sample.ath11k.header.freq1,
+								 result->sample.ath11k.header.chan_width_mhz,
+								 bins, bins / 2, i);
 
 					data = result->sample.ath11k.data[i] << result->sample.ath11k.header.max_exp;
 					if (data == 0)
