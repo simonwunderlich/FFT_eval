@@ -170,6 +170,22 @@ int fft_eval_init(char *fname);
 void fft_eval_exit(void);
 void fft_eval_usage(const char *prog);
 
+/**
+ * fft_eval_bin_freq() - Calculate the frequency of an FFT bin
+ * @center: frequency of the DC bin in MHz
+ * @bandwidth: bandwidth which is sampled by the FFT in MHz
+ * @fft_size: number of points of the FFT
+ * @dc_bin: index of the DC bin in the reported bins
+ * @bin: index of the reported bin
+ *
+ * Return: center frequency of the bin in MHz
+ */
+static inline double fft_eval_bin_freq(double center, double bandwidth,
+				       int fft_size, int dc_bin, int bin)
+{
+	return center + bandwidth * (bin - dc_bin) / fft_size;
+}
+
 extern struct scanresult *result_list;
 extern int scanresults_n;
 

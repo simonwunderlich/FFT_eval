@@ -243,17 +243,14 @@ static int draw_sample_ht20(Uint32 *pixels, struct scanresult *result,
 		 * According to Dave Aragon from University of Washington,
 		 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
 		 * divide 22 MHz channel width into 64 subcarriers but
-		 * only report the middle 56 subcarriers.
+		 * only report the middle 56 subcarriers. The DC subcarrier
+		 * is the bin in the middle.
 		 *
 		 * For 5 GHz we do not know (Atheros claims it does not support
-		 * this frequency band, but it works).
-		 *
-		 * Since all these calculations map pretty much to -10/+10 MHz,
-		 * and we don't know better, use this assumption as well in 5 GHz.
+		 * this frequency band, but it works). Use the same assumption.
 		 */
-		freq = result->sample.ht20.freq -
-				(22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 +
-				(22.0 * (i + 0.5) / 64.0);
+		freq = fft_eval_bin_freq(result->sample.ht20.freq, 22.0, 64,
+					 SPECTRAL_HT20_NUM_BINS / 2, i);
 
 		data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
 		plot_datapoint(pixels, freq, startfreq, result->sample.ht20.noise,
