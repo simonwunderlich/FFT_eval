@@ -90,6 +90,26 @@ For ath11k based cards, use:
 There are some recorded samples in the "samples" directory to try it
 out without actual hardware.
 
+The ``*_tones.dump`` samples were recorded with a single test tone (CW) from
+an AntSDR E200 about 20 cm away from the receiving antenna. They can be used
+to check the frequencies which are assigned to the FFT bins. Each file
+contains 4 samples per tone, sorted by the frequency of the tone:
+
+================================ ========== ========== ====================================
+File                             Channel    Center     Tones (MHz relative to the center)
+================================ ========== ========== ====================================
+ar9287_ch11_noht_tones.dump      11 (NOHT)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+ar9287_ch11_ht20_tones.dump      11 (HT20)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+ar9287_ch11_ht40minus_tones.dump 11 (HT40-) 2452 MHz   -19, -14.5, -11, -7, -3, -1, +1, +3,
+                                                       +7, +11, +15, +19
+ar9287_ch7_ht40plus_tones.dump   7 (HT40+)  2452 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
+                                                       +7, +11, +15, +19
+================================ ========== ========== ====================================
+
+The two halves of an HT20/40 sample are scaled with their own rssi. A tone
+close to the center can therefore look weaker than the bins of the other
+half (for example -1 MHz in ar9287_ch11_ht40minus_tones.dump).
+
 To view the FFT results, use:
 
 .. code-block:: bash
