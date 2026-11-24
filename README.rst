@@ -92,19 +92,33 @@ out without actual hardware.
 
 The ``*_tones.dump`` samples were recorded with a single test tone (CW) from
 an AntSDR E200 about 20 cm away from the receiving antenna. They can be used
-to check the frequencies which are assigned to the FFT bins. Each file
-contains 4 samples per tone, sorted by the frequency of the tone:
+to check the frequencies which are assigned to the FFT bins. The samples are
+sorted by the frequency of the tone. The ar9287 (ath9k) files contain 4
+samples per tone. The qca988x (ath10k) files contain the sequence of tones
+three times (FFT with 64, 128 and 256 bins) with 2 samples per tone:
 
-================================ ========== ========== ====================================
-File                             Channel    Center     Tones (MHz relative to the center)
-================================ ========== ========== ====================================
-ar9287_ch11_noht_tones.dump      11 (NOHT)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
-ar9287_ch11_ht20_tones.dump      11 (HT20)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
-ar9287_ch11_ht40minus_tones.dump 11 (HT40-) 2452 MHz   -19, -14.5, -11, -7, -3, -1, +1, +3,
-                                                       +7, +11, +15, +19
-ar9287_ch7_ht40plus_tones.dump   7 (HT40+)  2452 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
-                                                       +7, +11, +15, +19
-================================ ========== ========== ====================================
+================================== ========== ========== ====================================
+File                               Channel    Center     Tones (MHz relative to the center)
+================================== ========== ========== ====================================
+ar9287_ch11_noht_tones.dump        11 (NOHT)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+ar9287_ch11_ht20_tones.dump        11 (HT20)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+ar9287_ch11_ht40minus_tones.dump   11 (HT40-) 2452 MHz   -19, -14.5, -11, -7, -3, -1, +1, +3,
+                                                         +7, +11, +15, +19
+ar9287_ch7_ht40plus_tones.dump     7 (HT40+)  2452 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
+                                                         +7, +11, +15, +19
+qca988x_ch11_noht_tones.dump       11 (NOHT)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+qca988x_ch11_ht20_tones.dump       11 (HT20)  2462 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+qca988x_ch11_ht40minus_tones.dump  11 (HT40-) 2452 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
+                                                         +7, +11, +15, +19
+qca988x_ch7_ht40plus_tones.dump    7 (HT40+)  2452 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
+                                                         +7, +11, +15, +19
+qca988x_ch36_noht_tones.dump       36 (NOHT)  5180 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+qca988x_ch36_ht20_tones.dump       36 (HT20)  5180 MHz   -9, -6, -3, -1, +1, +3, +6, +9
+qca988x_ch36_ht40plus_tones.dump   36 (HT40+) 5190 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
+                                                         +7, +11, +15, +19
+qca988x_ch40_ht40minus_tones.dump  40 (HT40-) 5190 MHz   -19, -15, -11, -7, -3, -1, +1, +3,
+                                                         +7, +11, +15, +19
+================================== ========== ========== ====================================
 
 The two halves of an HT20/40 sample are scaled with their own rssi. A tone
 close to the center can therefore look weaker than the bins of the other
