@@ -397,9 +397,14 @@ static int draw_sample_ath10k(Uint32 *pixels, struct scanresult *result,
 	for (i = 0; i < bins; i++) {
 		float freq;
 		int data;
-		freq = result->sample.ath10k.header.freq1 -
-				(result->sample.ath10k.header.chan_width_mhz ) / 2 +
-				(result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
+		/*
+		 * For 20/40/80 MHz channels, ath10k reports the bandwidth which
+		 * is sampled by the FFT (22/44/88 MHz). The DC bin is in the
+		 * middle.
+		 */
+		freq = fft_eval_bin_freq(result->sample.ath10k.header.freq1,
+					 result->sample.ath10k.header.chan_width_mhz,
+					 bins, bins / 2, i);
 
 		data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
 		plot_datapoint(pixels, freq, startfreq, result->sample.ath10k.header.noise,

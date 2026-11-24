@@ -196,7 +196,14 @@ static int print_values(void)
 					float freq;
 					int data;
 					float signal;
-					freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 + (result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
+					/*
+					 * For 20/40/80 MHz channels, ath10k reports the bandwidth which
+					 * is sampled by the FFT (22/44/88 MHz). The DC bin is in the
+					 * middle.
+					 */
+					freq = fft_eval_bin_freq(result->sample.ath10k.header.freq1,
+								 result->sample.ath10k.header.chan_width_mhz,
+								 bins, bins / 2, i);
 
 					data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
 					if (data == 0)
