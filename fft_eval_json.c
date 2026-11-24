@@ -140,7 +140,12 @@ static int print_values(void)
 					float freq;
 					int data;
 
-					freq = centerfreq - (40.0 * SPECTRAL_HT20_40_NUM_BINS / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
+					/*
+					 * Like for HT20, the FFT samples 44 MHz (and not 40 MHz) with
+					 * the DC subcarrier in the middle.
+					 */
+					freq = fft_eval_bin_freq(centerfreq, 44.0, 128,
+								 SPECTRAL_HT20_40_NUM_BINS / 2, i);
 
 					if (i < SPECTRAL_HT20_40_NUM_BINS / 2) {
 						noise = result->sample.ht40.lower_noise;
