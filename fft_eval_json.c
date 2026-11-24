@@ -262,6 +262,30 @@ static int print_values(void)
 				}
 			}
 			break;
+		case MT7996_SPECTRUM_TYPE:
+			{
+				uint32_t center_freq = result->sample.mt7996.header.center_freq_mhz;
+				uint32_t bw = result->sample.mt7996.header.bandwidth_mhz;
+				int nfft = mt7996_spectrum_capture_sample_count(result->sample.mt7996.header);
+				int i;
+
+				printf("\n{ \"central_freq\": %u, \"data\": [ ", center_freq);
+
+				for (i = 0; i < nfft; i++) {
+					float freq, signal, re, im;
+
+					freq = center_freq + (i - nfft/2.) * bw * 2 / nfft;
+
+					re = result->sample.mt7996.fft[i].re;
+					im = result->sample.mt7996.fft[i].im;
+					signal = 10 * log10(re*re+im*im);
+
+					if (i > 0)
+						printf(", ");
+					printf("[ %f, %f ]", freq, signal);
+				}
+			}
+			break;
 		}
 
 		printf(" ] }");
