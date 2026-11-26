@@ -49,6 +49,32 @@
 #include <string.h>
 #include <unistd.h>
 
+static inline size_t size_mul(size_t factor1, size_t factor2)
+{
+	size_t bytes;
+
+	if (__builtin_mul_overflow(factor1, factor2, &bytes))
+		return SIZE_MAX;
+
+	return bytes;
+}
+
+static inline size_t size_add(size_t addend1, size_t addend2)
+{
+	size_t bytes;
+
+	if (__builtin_add_overflow(addend1, addend2, &bytes))
+		return SIZE_MAX;
+
+	return bytes;
+}
+
+#define flex_array_size(p, member, count) \
+	size_mul(count, sizeof(*(p)->member))
+
+#define struct_size(p, member, count) \
+	size_add(sizeof(*(p)), flex_array_size(p, member, count))
+
 struct scanresult *result_list;
 int scanresults_n;
 
@@ -136,6 +162,22 @@ static int is_valid_max_exp(u8 max_exp)
 	return 1;
 }
 
+static struct scanresult *scanresult_alloc(size_t size,
+					   const struct fft_sample_tlv *tlv,
+					   size_t sample_len)
+{
+	struct scanresult *result;
+
+	result = malloc(size);
+	if (!result)
+		return NULL;
+
+	result->next = NULL;
+	memcpy(&result->sample, tlv, sample_len);
+
+	return result;
+}
+
 /*
  * read_scandata - reads the fft scandata and compiles a linked list of datasets
  *
@@ -179,26 +221,22 @@ int fft_eval_init(char *fname)
 
 		pos += sample_len;
 
-		if (sample_len > sizeof(result->sample)) {
-			fprintf(stderr, "sample length %zu too long\n", sample_len);
-			continue;
-		}
-
-		result = malloc(sizeof(*result));
-		if (!result)
-			continue;
-
-		memset(result, 0, sizeof(*result));
-		memcpy(&result->sample, tlv, sample_len);
-
+		result = NULL;
 		handled = 0;
 		switch (tlv->type) {
 		case ATH_FFT_SAMPLE_HT20:
-			if (sample_len != sizeof(result->sample.ht20)) {
+			bins = SPECTRAL_HT20_NUM_BINS;
+
+			if (sample_len != sizeof(result->sample.ht20) + bins) {
 				fprintf(stderr, "wrong sample length (have %zu, expected %zu)\n",
-					sample_len, sizeof(result->sample.ht20));
+					sample_len, sizeof(result->sample.ht20) + bins);
 				break;
 			}
+
+			result = scanresult_alloc(struct_size(result, sample.ht20.data, bins),
+						  tlv, sample_len);
+			if (!result)
+				break;
 
 			/*
 			 * The signal strength of a bin is calculated relative to
@@ -218,11 +256,18 @@ int fft_eval_init(char *fname)
 			handled = 1;
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
-			if (sample_len != sizeof(result->sample.ht40)) {
+			bins = SPECTRAL_HT20_40_NUM_BINS;
+
+			if (sample_len != sizeof(result->sample.ht40) + bins) {
 				fprintf(stderr, "wrong sample length (have %zu, expected %zu)\n",
-					sample_len, sizeof(result->sample.ht40));
+					sample_len, sizeof(result->sample.ht40) + bins);
 				break;
 			}
+
+			result = scanresult_alloc(struct_size(result, sample.ht40.data, bins),
+						  tlv, sample_len);
+			if (!result)
+				break;
 
 			/*
 			 * The position of the secondary channel is required to
@@ -268,6 +313,11 @@ int fft_eval_init(char *fname)
 				break;
 			}
 
+			result = scanresult_alloc(struct_size(result, sample.ath10k.data, bins),
+						  tlv, sample_len);
+			if (!result)
+				break;
+
 			/*
 			 * Zero noise level should not happen in a real environment
 			 * but some datasets contain it which creates bogus results.
@@ -309,6 +359,11 @@ int fft_eval_init(char *fname)
 				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
+
+			result = scanresult_alloc(struct_size(result, sample.ath11k.data, bins),
+						  tlv, sample_len);
+			if (!result)
+				break;
 
 			/*
 			 * Zero noise level should not happen in a real environment

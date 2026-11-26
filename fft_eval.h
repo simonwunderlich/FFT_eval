@@ -67,7 +67,7 @@ struct fft_sample_ht20 {
 
         u64 tsf;
 
-        u8 data[SPECTRAL_HT20_NUM_BINS];
+        u8 data[0];
 } __attribute__((packed));
 
 struct fft_sample_ht20_40 {
@@ -95,7 +95,7 @@ struct fft_sample_ht20_40 {
 
 	u8 max_exp;
 
-	u8 data[SPECTRAL_HT20_40_NUM_BINS];
+	u8 data[0];
 } __attribute__((packed));
 
 /*
@@ -150,20 +150,20 @@ struct fft_sample_ath11k {
 
 
 struct scanresult {
+	struct scanresult *next;
 	union {
 		struct fft_sample_tlv tlv;
 		struct fft_sample_ht20 ht20;
 		struct fft_sample_ht20_40 ht40;
 		struct {
 			struct fft_sample_ath10k header;
-			u8 data[SPECTRAL_ATH10K_MAX_NUM_BINS];
+			u8 data[0];
 		} ath10k;
 		struct {
 			struct fft_sample_ath11k header;
-			u8 data[SPECTRAL_ATH11K_MAX_NUM_BINS];
+			u8 data[0];
 		} ath11k;
 	} sample;
-	struct scanresult *next;
 };
 
 int fft_eval_init(char *fname);
