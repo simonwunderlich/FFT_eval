@@ -64,6 +64,7 @@ jobs:
       matrix:
         msystem:
           - UCRT64
+          - CLANG64
     defaults:
       run:
         shell: msys2 {0}
