@@ -498,8 +498,8 @@ static int draw_sample_mt7996(Uint32 *pixels, struct scanresult *result,
 	bw = result->sample.mt7996.header.bandwidth_mhz;
 
 	for (i = 0; i < bins; i++) {
-		float re = result->sample.mt7996.fft[i].re;
-		float im = result->sample.mt7996.fft[i].im;
+		float re = result->sample.mt7996.fft[i].r;
+		float im = result->sample.mt7996.fft[i].i;
 		float data = re*re + im*im;
 		if (data > datamax) datamax = data;
 		if (data < datamin) datamin = data;
@@ -520,8 +520,8 @@ static int draw_sample_mt7996(Uint32 *pixels, struct scanresult *result,
 
 		freq = center_freq + (i - bins/2.) * bw * 2 / bins;
 
-		re = result->sample.mt7996.fft[i].re;
-		im = result->sample.mt7996.fft[i].im;
+		re = result->sample.mt7996.fft[i].r;
+		im = result->sample.mt7996.fft[i].i;
 		signal = 10 * log10f(re*re+im*im);
 
 		plot_signal(pixels, freq, startfreq, signal, highlight);

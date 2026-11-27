@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <kiss_fft.h>
 
 typedef int8_t s8;
 typedef uint8_t u8;
@@ -199,9 +200,7 @@ struct scanresult {
 			struct {
 				int32_t i, q;
 			} raw[MT7996_SPECTRUM_MAX_SAMPLES];
-			struct {
-				float re, im;
-			} fft[MT7996_SPECTRUM_MAX_SAMPLES];
+			kiss_fft_cpx fft[MT7996_SPECTRUM_MAX_SAMPLES];
 		} mt7996;
 	} sample;
 };

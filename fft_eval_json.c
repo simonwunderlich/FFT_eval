@@ -276,8 +276,8 @@ static int print_values(void)
 
 					freq = center_freq + (i - nfft/2.) * bw * 2 / nfft;
 
-					re = result->sample.mt7996.fft[i].re;
-					im = result->sample.mt7996.fft[i].im;
+					re = result->sample.mt7996.fft[i].r;
+					im = result->sample.mt7996.fft[i].i;
 					signal = 10 * log10(re*re+im*im);
 
 					if (i > 0)

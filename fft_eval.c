@@ -12,7 +12,6 @@
  */
 
 #include <assert.h>
-#include <kiss_fft.h>
 #include "fft_eval.h"
 
 #if defined(__APPLE__)
@@ -461,17 +460,17 @@ int fft_eval_init(char *fname)
 			for (i = 0; i < samples; i++) {
 				CONVERT_LE32(result->sample.mt7996.raw[i].i);
 				CONVERT_LE32(result->sample.mt7996.raw[i].q);
-				result->sample.mt7996.fft[i].re =
+				result->sample.mt7996.fft[i].r =
 					result->sample.mt7996.raw[i].i /
 					-(float)INT32_MIN;
-				result->sample.mt7996.fft[i].im =
+				result->sample.mt7996.fft[i].i =
 					result->sample.mt7996.raw[i].q /
 					-(float)INT32_MIN;
 			}
 
-			kiss_fft(fft_cfg, (kiss_fft_cpx *)result->sample.mt7996.fft,
-				 (kiss_fft_cpx *)result->sample.mt7996.fft);
-			fftshift((kiss_fft_cpx *)result->sample.mt7996.fft, nfft);
+			kiss_fft(fft_cfg, result->sample.mt7996.fft,
+				 result->sample.mt7996.fft);
+			fftshift(result->sample.mt7996.fft, nfft);
 
 			handled = 1;
 			break;
