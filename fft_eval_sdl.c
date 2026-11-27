@@ -172,22 +172,13 @@ static int render_text(SDL_Surface *surface, char *text, int x, int y)
 }
 
 
-static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
-			  int noise, int rssi, int data,
-			  uint64_t datasquaresum,
-			  int highlight)
+static int plot_signal(Uint32 *pixels, float freq, float startfreq,
+		       float signal, int highlight)
 {
 	Uint32 color, opacity;
 	int x, y;
-	float signal;
-
-	/* This is where the "magic" happens: interpret the signal
-	 * to output some kind of data which looks useful.  */
 
 	x = (X_SCALE * (freq - startfreq));
-	if (data == 0)
-		data = 1;
-	signal = (float)noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 	/* is not visible and might not be representable as integer */
 	if (!(signal > -HEIGHT && signal < HEIGHT))
@@ -206,6 +197,30 @@ static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
 	if (bigpixel(pixels, x, y, color, opacity) < 0)
 		return -1;
 	return 0;
+}
+
+
+static float interpret_signal(int noise, int rssi, int data,
+			      uint64_t datasquaresum)
+{
+	if (data == 0)
+		data = 1;
+	return noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+}
+
+
+static int plot_datapoint(Uint32 *pixels, float freq, float startfreq,
+			  int noise, int rssi, int data, uint64_t datasquaresum,
+			  int highlight)
+{
+	float signal;
+
+	/* This is where the "magic" happens: interpret the signal
+	 * to output some kind of data which looks useful.  */
+
+	signal = interpret_signal(noise, rssi, data, datasquaresum);
+
+	return plot_signal(pixels, freq, startfreq, signal, highlight);
 }
 
 
@@ -469,6 +484,52 @@ static int draw_sample_ath11k(Uint32 *pixels, struct scanresult *result,
 	return 0;
 }
 
+
+static int draw_sample_mt7996(Uint32 *pixels, struct scanresult *result,
+			      float startfreq, int highlight)
+{
+	float datamax = -INFINITY;
+	float datamin = INFINITY;
+	int i, bins;
+	uint32_t center_freq, bw;
+
+	bins = mt7996_spectrum_capture_sample_count(result->sample.mt7996.header);
+	center_freq = result->sample.mt7996.header.center_freq_mhz;
+	bw = result->sample.mt7996.header.bandwidth_mhz;
+
+	for (i = 0; i < bins; i++) {
+		float re = result->sample.mt7996.fft[i].r;
+		float im = result->sample.mt7996.fft[i].i;
+		float data = re*re + im*im;
+		if (data > datamax) datamax = data;
+		if (data < datamin) datamin = data;
+	}
+
+	if (highlight) {
+		/* prints some statistical data about the currently selected
+		 * data sample and auxiliary data. */
+
+		printf("result: freq %04d (width %d MHz), %d bins | ",
+		       result->sample.mt7996.header.center_freq_mhz,
+		       bw * 2, bins);
+		printf("datamax = %g, datamin = %g\n", datamax, datamin);
+	}
+
+	for (i = 0; i < bins; i++) {
+		float freq, re, im, signal;
+
+		freq = center_freq + (i - bins/2.) * bw * 2 / bins;
+
+		re = result->sample.mt7996.fft[i].r;
+		im = result->sample.mt7996.fft[i].i;
+		signal = 10 * log10f(re*re+im*im);
+
+		plot_signal(pixels, freq, startfreq, signal, highlight);
+	}
+
+	return 0;
+}
+
 /*
  * draw_picture - draws the current screen.
  *
@@ -555,6 +616,12 @@ static int draw_picture(int highlight, int startfreq)
 				highlight_freq = result->sample.ath11k.header.freq1;
 
 			draw_sample_ath11k(pixels, result, startfreq, rnum == highlight);
+			break;
+		case MT7996_SPECTRUM_TYPE:
+			if (rnum == highlight)
+				highlight_freq = result->sample.mt7996.header.center_freq_mhz;
+
+			draw_sample_mt7996(pixels, result, startfreq, rnum == highlight);
 			break;
 		}
 		rnum++;

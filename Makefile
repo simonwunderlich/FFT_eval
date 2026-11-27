@@ -47,6 +47,26 @@ ifndef V
 endif
 endif
 
+# discover pkg-config
+ifeq ($(origin PKG_CONFIG), undefined)
+  PKG_CONFIG = $(CROSS)pkg-config
+  ifeq ($(shell which $(PKG_CONFIG) 2>/dev/null),)
+    $(error $(PKG_CONFIG) not found)
+  endif
+endif
+
+# kissfft dependency
+ifeq ($(origin KISSFFT_CFLAGS) $(origin KISSFFT_LDLIBS), undefined undefined)
+  LIBKISSFFT_NAME ?= kissfft-float
+  ifeq ($(shell $(PKG_CONFIG) --modversion $(LIBKISSFFT_NAME) 2>/dev/null),)
+    $(error No $(LIBKISSFFT_NAME) development libraries found!)
+  endif
+  KISSFFT_CFLAGS += $(shell $(PKG_CONFIG) --cflags $(LIBKISSFFT_NAME))
+  KISSFFT_LDLIBS +=  $(shell $(PKG_CONFIG) --libs $(LIBKISSFFT_NAME))
+endif
+CFLAGS += $(KISSFFT_CFLAGS)
+LDLIBS += $(KISSFFT_LDLIBS)
+
 ifeq ($(CONFIG_fft_eval_sdl),y)
   # test for presence of SDL
   ifeq ($(origin SDL_CFLAGS) $(origin SDL_LDLIBS), undefined undefined)
@@ -59,14 +79,7 @@ ifeq ($(CONFIG_fft_eval_sdl),y)
   endif
   CFLAGS_fft_eval_sdl.o += $(SDL_CFLAGS)
   LDLIBS_fft_eval_sdl += $(SDL_LDLIBS)
-  
-  ifeq ($(origin PKG_CONFIG), undefined)
-    PKG_CONFIG = $(CROSS)pkg-config
-    ifeq ($(shell which $(PKG_CONFIG) 2>/dev/null),)
-      $(error $(PKG_CONFIG) not found)
-    endif
-  endif
-  
+
   ifeq ($(origin LIBSDL2TTF_CFLAGS) $(origin LIBSDL2TTF_LDLIBS), undefined undefined)
     LIBSDL2TTF_NAME ?= SDL2_ttf
     ifeq ($(shell $(PKG_CONFIG) --modversion $(LIBSDL2TTF_NAME) 2>/dev/null),)
