@@ -279,10 +279,12 @@ static int print_values(void)
 					re = result->sample.mt7996.fft[i].r;
 					im = result->sample.mt7996.fft[i].i;
 					signal = 10 * log10(re*re+im*im);
+					if (!isfinite(signal))
+						continue;
 
-					if (i > 0)
-						printf(", ");
 					printf("[ %f, %f ]", freq, signal);
+					if (i < nfft - 1)
+						printf(", ");
 				}
 			}
 			break;
